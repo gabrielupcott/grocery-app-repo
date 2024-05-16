@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.openapi.models import OAuthFlowPassword
 from fastapi.security import OAuth2
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import httpx
 from dotenv import load_dotenv
@@ -16,6 +17,15 @@ import base64
 
 # FastAPI app
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to specify allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load environment variables from secrets.env for AWS Cognito configuration
 load_dotenv()
@@ -35,6 +45,7 @@ class UserRegister(BaseModel):
     username: str
     password: str
     email: str
+    role: int
 
 class UserLogin(BaseModel):
     username: str
@@ -108,6 +119,7 @@ def register(user: UserRegister):
             Password=user.password,
             UserAttributes=[
                 {'Name': 'email', 'Value': user.email},
+                {'Name': 'custom:role', 'Value': str(user.role)},
             ],
         )
         return {"message": "User registered successfully"}
@@ -136,6 +148,25 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail=e.response['Error']['Message'],
         )
 
+@app.post("/app-login", response_model=dict)
+def app_login(user: UserLogin):
+    try:
+        response = cognito_client.initiate_auth(
+            ClientId=COGNITO_CLIENT_ID,
+            AuthFlow='USER_PASSWORD_AUTH',
+            AuthParameters={
+                'USERNAME': user.username,
+                'PASSWORD': user.password,
+                'SECRET_HASH': get_secret_hash(user.username),
+            },
+        )
+        return {"access_token": response['AuthenticationResult']['AccessToken'], "token_type": "bearer"}
+    except ClientError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.response['Error']['Message'],
+        )
+
 @app.post("/logout")
 def logout(token: str = Depends(oauth2_scheme)):
     try:
@@ -155,6 +186,7 @@ async def protected_route(current_user: User = Depends(get_current_user)):
 
 @app.post("/confirm-registration")
 def confirm_registration(user: UserConfirm):
+    print(user.username, user.confirmation_code)
     try:
         cognito_client.confirm_sign_up(
             ClientId=COGNITO_CLIENT_ID,
