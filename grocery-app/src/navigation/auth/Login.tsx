@@ -61,6 +61,8 @@ const Login: React.FC<{ navigation: any }> = ({ navigation }) => {
       await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("userName", values.username);
 
+      // TODO: Implement API endpoint to retrieve user data and find role, then store async
+
       if (response.status === 200) {
         navigation.navigate("Main");
       }

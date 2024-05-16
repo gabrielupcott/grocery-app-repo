@@ -7,6 +7,7 @@ import { CodeField, Cursor, useBlurOnFulfill, useClearByFocusCell } from "react-
 import * as Yup from "yup";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URLS } from "../../api/constants";
+import Toast from "react-native-root-toast";
 
 interface FormValues {
   code: string;
@@ -68,29 +69,20 @@ const Verify: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       console.log("Verification successful:", response.data);
 
+      // Display success toast
+      Toast.show("Verification successful! Please Login", {
+        duration: Toast.durations.LONG,
+        position: Toast.positions.BOTTOM,
+        shadow: true,
+        animation: true,
+        hideOnPress: true,
+        delay: 0,
+      });
+
       // Redirect to login screen
       navigation.navigate("Login");
 
-      // // Automatically log in after successful verification
-      // const loginResponse = await axios.post(
-      //   API_URLS.LOGIN,
-      //   {
-      //     username: email,
-      //     password: await AsyncStorage.getItem("userPassword"),
-      //   },
-      //   {
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //   }
-      // );
-
-      // const token = loginResponse.data.access_token;
-
-      // await AsyncStorage.setItem("token", token);
-
-      // setSubmitting(false);
-      // navigation.navigate("Main");
+      setSubmitting(false);
     } catch (error) {
       const axiosError = error as CustomAxiosError;
       if (axiosError.response) {
@@ -98,8 +90,29 @@ const Verify: React.FC<{ navigation: any }> = ({ navigation }) => {
           ? axiosError.response.data.messages.join("\n")
           : "Verification failed. Please try again.";
         setGeneralError(errorMessage);
+
+        // Display error toast
+        Toast.show(errorMessage, {
+          duration: Toast.durations.LONG,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+        });
       } else {
-        setGeneralError("An unknown error occurred. Please try again.");
+        const defaultErrorMessage = "An unknown error occurred. Please try again.";
+        setGeneralError(defaultErrorMessage);
+
+        // Display error toast
+        Toast.show(defaultErrorMessage, {
+          duration: Toast.durations.LONG,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+        });
       }
       setSubmitting(false);
     }
@@ -107,41 +120,7 @@ const Verify: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const onResend = async () => {
     console.log("Resend code not currently implemented");
-    // try {
-    //   const email = await AsyncStorage.getItem("userName");
-
-    //   if (!email) {
-    //     setGeneralError("Email not found. Please register again.");
-    //     return;
-    //   }
-
-    //   const response = await axios.post(
-    //     API_URLS.RESEND_CODE,
-    //     {
-    //       username: email,
-    //     },
-    //     {
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //     }
-    //   );
-
-    //   console.log("Resend successful:", response.data);
-    //   setResent(true);
-    // } catch (error) {
-    //   const axiosError = error as CustomAxiosError;
-    //   console.error("Resend error:", axiosError);
-
-    //   if (axiosError.response) {
-    //     const errorMessage = axiosError.response.data.messages
-    //       ? axiosError.response.data.messages.join("\n")
-    //       : "Resend code failed. Please try again.";
-    //     setGeneralError(errorMessage);
-    //   } else {
-    //     setGeneralError("An unknown error occurred. Please try again.");
-    //   }
-    // }
+    // Implementation of resend functionality can be added here
   };
 
   return (
