@@ -8,5 +8,6 @@ export const API_URLS = {
   LOGIN: `${BASE_URL}/app-login`,
   REGISTER: `${BASE_URL}/register`,
   CONFIRM_REGISTRATION: `${BASE_URL}/confirm-registration`,
+  PROTECTED_ROUTE: `${BASE_URL}/protected`,
   // Add other endpoints as needed
 };

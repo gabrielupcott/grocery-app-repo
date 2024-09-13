@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { Layout, Text, Button } from "@ui-kitten/components";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { API_URLS } from "../../api/constants"; // Assuming you have a constants file
 
 const Pantry: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -29,6 +31,20 @@ const Pantry: React.FC<{ navigation: any; route: any }> = ({
     navigation.navigate("Login");
   };
 
+  const tryProtectedRoute = async () => {
+    try {
+      const response = await axios.get(API_URLS.PROTECTED_ROUTE, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Protected route response:", response);
+    } catch (error) {
+      console.error("Protected route error:", error);
+    }
+  }
+
   return (
     <ScrollView >
       <View style={styles.container}>
@@ -39,6 +55,9 @@ const Pantry: React.FC<{ navigation: any; route: any }> = ({
             <View style={styles.tokenContainer}>
               <Text style={styles.tokenText}>{token}</Text>
             </View>
+            <Button onPress={tryProtectedRoute} style={styles.button}>
+              Try protected route
+            </Button>
             <Button onPress={handleLogout} style={styles.button}>
               Logout
             </Button>
