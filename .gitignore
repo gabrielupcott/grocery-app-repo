@@ -32,8 +32,8 @@ yarn-error.*
 .env*.local
 
 # python venv
-../backend/api/api-env/
-api-env/
+api/venv
+api/.env
 
 # typescript
 *.tsbuildinfo
