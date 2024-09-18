@@ -1,10 +1,12 @@
-import { SafeAreaView, View, StyleSheet, ScrollView } from "react-native";
+import {View, StyleSheet, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { Layout, Text, Button } from "@ui-kitten/components";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { API_URLS } from "../../api/constants"; // Assuming you have a constants file
+import { API_URLS } from "../../constants/constants"; // Assuming you have a constants file
+import * as SecureStore from 'expo-secure-store';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Pantry: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -16,8 +18,8 @@ const Pantry: React.FC<{ navigation: any; route: any }> = ({
 
   useEffect(() => {
     const loadUserData = async () => {
-      const storedUserName = await AsyncStorage.getItem("userName");
-      const storedToken = await AsyncStorage.getItem("token");
+      const storedUserName = await SecureStore.getItemAsync("userName");
+      const storedToken = await SecureStore.getItemAsync("token");
       setUserName(storedUserName);
       setToken(storedToken);
     };
@@ -26,8 +28,8 @@ const Pantry: React.FC<{ navigation: any; route: any }> = ({
   }, []);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("userName");
-    await AsyncStorage.removeItem("token");
+    await SecureStore.deleteItemAsync("userName");
+    await SecureStore.deleteItemAsync("token");
     navigation.navigate("Login");
   };
 
@@ -47,7 +49,7 @@ const Pantry: React.FC<{ navigation: any; route: any }> = ({
 
   return (
     <ScrollView >
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         {userName && token ? (
           <>
             <Text category="s1">Welcome, {userName}!</Text>
@@ -65,7 +67,7 @@ const Pantry: React.FC<{ navigation: any; route: any }> = ({
         ) : (
           <Text>Loading user data...</Text>
         )}
-      </View>
+      </SafeAreaView>
     </ScrollView>
   );
 };

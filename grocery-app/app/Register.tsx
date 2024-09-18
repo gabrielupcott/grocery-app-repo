@@ -5,8 +5,10 @@ import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URLS } from "../../api/constants";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URLS } from "../constants/constants";
+import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
 
 interface FormValues {
   email: string;
@@ -39,7 +41,7 @@ const RegisterSchema = Yup.object().shape({
   role: Yup.number().required("Required"),
 });
 
-const Register: React.FC<{ navigation: any }> = ({ navigation }) => {
+const Register: React.FC = () => {
   const [generalError, setGeneralError] = useState<string>("");
 
   const onSubmit = async (
@@ -63,8 +65,8 @@ const Register: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       if (response.status === 200) {
       // Store the token in AsyncStorage
-      await AsyncStorage.setItem("userName", values.email);
-        navigation.navigate("Verify");
+      await SecureStore.setItemAsync("userName", values.email);
+        router.push("/Verify");
         // Alert.alert("Success", "User registered successfully!", [
         //   { text: "OK", onPress: () => navigation.navigate("Login") },
         // ]);

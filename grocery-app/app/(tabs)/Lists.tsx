@@ -1,8 +1,10 @@
-import { SafeAreaView, View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { Layout, Text, Button } from "@ui-kitten/components";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Lists: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -14,8 +16,8 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({
 
   useEffect(() => {
     const loadUserData = async () => {
-      const storedUserName = await AsyncStorage.getItem("userName");
-      const storedToken = await AsyncStorage.getItem("token");
+      const storedUserName = await SecureStore.getItemAsync("userName");
+      const storedToken = await SecureStore.getItemAsync("token");
       setUserName(storedUserName);
       setToken(storedToken);
     };
@@ -24,14 +26,14 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({
   }, []);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("userName");
-    await AsyncStorage.removeItem("token");
+    await SecureStore.deleteItemAsync("userName");
+    await SecureStore.deleteItemAsync("token");
     navigation.navigate("Login");
   };
 
   return (
     <ScrollView >
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         {userName && token ? (
           <>
             <Text category="s1">Lists Page for: {userName}</Text>
@@ -39,7 +41,7 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({
         ) : (
           <Text>Loading user data...</Text>
         )}
-      </View>
+      </SafeAreaView>
     </ScrollView>
   );
 };

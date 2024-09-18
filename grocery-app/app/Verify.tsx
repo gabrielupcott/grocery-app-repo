@@ -5,9 +5,11 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { Formik, FormikHelpers } from "formik";
 import { CodeField, Cursor, useBlurOnFulfill, useClearByFocusCell } from "react-native-confirmation-code-field";
 import * as Yup from "yup";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URLS } from "../../api/constants";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URLS } from "../constants/constants";
 import Toast from "react-native-root-toast";
+import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
 
 interface FormValues {
   code: string;
@@ -31,7 +33,7 @@ const LoginSchema = Yup.object().shape({
 });
 const CELL_COUNT = 6;
 
-const Verify: React.FC<{ navigation: any }> = ({ navigation }) => {
+const Verify: React.FC = () => {
   const [resent, setResent] = useState(false);
   const [generalError, setGeneralError] = useState<string>("");
   const [value, setValue] = useState("");
@@ -46,7 +48,7 @@ const Verify: React.FC<{ navigation: any }> = ({ navigation }) => {
     { setSubmitting, setFieldError }: FormikHelpers<FormValues>
   ) => {
     try {
-      const email = await AsyncStorage.getItem("userName");
+      const email = await SecureStore.getItemAsync("userName");
 
       if (!email) {
         setGeneralError("Email not found. Please register again.");
@@ -80,7 +82,7 @@ const Verify: React.FC<{ navigation: any }> = ({ navigation }) => {
       });
 
       // Redirect to login screen
-      navigation.navigate("Login");
+      router.push("/Login");
 
       setSubmitting(false);
     } catch (error) {

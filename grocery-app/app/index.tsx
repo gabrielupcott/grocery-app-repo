@@ -1,6 +1,7 @@
 import { SafeAreaView, View, StyleSheet } from "react-native";
 import React from "react";
 import { Button, Text } from "@ui-kitten/components";
+import { router } from 'expo-router';
 
 const Landing: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
@@ -10,13 +11,13 @@ const Landing: React.FC<{ navigation: any }> = ({ navigation }) => {
           Grocery App
         </Text>
         <Button
-          onPress={() => navigation.navigate("Login")}
+          onPress={() => router.push("/Login")}
           style={styles.button}
         >
           Login
         </Button>
         <Button
-          onPress={() => navigation.navigate("Register")}
+          onPress={() => router.push("/Register")}
           style={styles.button}
         >
           Sign Up
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
   button: {
     width: "50%",
     alignSelf: "center",
-    fontFamily: "Poppins-Medium",
+    // fontFamily: "Poppins-Medium",
     marginBottom: "5%",
   },
 });

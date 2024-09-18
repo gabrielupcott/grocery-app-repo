@@ -4,8 +4,10 @@ import { Button, Text, Input } from "@ui-kitten/components";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URLS } from "../../api/constants"; // Assuming you have a constants file
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URLS } from "../constants/constants"; // Assuming you have a constants file
+import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
 
 interface FormValues {
   username: string;
@@ -32,7 +34,7 @@ const LoginSchema = Yup.object().shape({
     .required("Required"),
 });
 
-const Login: React.FC<{ navigation: any }> = ({ navigation }) => {
+const Login: React.FC = () => {
   const [generalError, setGeneralError] = useState<string>("");
 
   const onSubmit = async (
@@ -58,17 +60,19 @@ const Login: React.FC<{ navigation: any }> = ({ navigation }) => {
       const token = response.data.access_token;
 
       // Store the token in AsyncStorage
-      await AsyncStorage.setItem("token", token);
-      await AsyncStorage.setItem("userName", values.username);
+      await SecureStore.setItemAsync("token", token);
+      await SecureStore.setItemAsync("userName", values.username);
 
       // TODO: Implement API endpoint to retrieve user data and find role, then store async
 
       if (response.status === 200) {
-        navigation.navigate("Main");
+        // navigation.navigate("Main");
+        router.push('/(tabs)');
       }
     } catch (error) {
       const axiosError = error as CustomAxiosError;
       console.error("Login error:", axiosError);
+      console.log("Login error:", axiosError.toJSON());
 
       if (
         axiosError.response &&
@@ -156,7 +160,7 @@ const Login: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Button
             appearance="ghost"
             status="primary"
-            onPress={() => navigation.navigate("Register")}
+            onPress={() => router.push('/Register')}
           >
             Sign Up
           </Button>
@@ -192,7 +196,7 @@ const styles = StyleSheet.create({
   button: {
     width: "50%",
     alignSelf: "center",
-    fontFamily: "Poppins-Medium",
+    // fontFamily: "Poppins-Medium",
   },
   bottomContainer: {
     position: "absolute",
