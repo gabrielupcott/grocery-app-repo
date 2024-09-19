@@ -4,7 +4,6 @@ import { Button, Text, Input } from "@ui-kitten/components";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URLS } from "../constants/constants"; // Assuming you have a constants file
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
@@ -72,7 +71,6 @@ const Login: React.FC = () => {
     } catch (error) {
       const axiosError = error as CustomAxiosError;
       console.error("Login error:", axiosError);
-      console.log("Login error:", axiosError.toJSON());
 
       if (
         axiosError.response &&
@@ -148,6 +146,7 @@ const Login: React.FC = () => {
                 onPress={() => handleSubmit()}
                 style={styles.button}
                 status="primary"
+                appearance="outline"
               >
                 Sign In
               </Button>

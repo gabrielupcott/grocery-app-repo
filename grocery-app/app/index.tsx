@@ -1,27 +1,43 @@
-import { SafeAreaView, View, StyleSheet } from "react-native";
+import { SafeAreaView, View, StyleSheet, Image } from "react-native";
 import React from "react";
 import { Button, Text } from "@ui-kitten/components";
 import { router } from 'expo-router';
 
 const Landing: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Image Section */}
+        <Image
+          source={require('../assets/images/landing-icon.png')} // Update with the actual path to your image file
+          style={styles.image}
+        />
+        {/* Title Section */}
         <Text style={styles.title} category="h1">
           Grocery App
         </Text>
-        <Button
-          onPress={() => router.push("/Login")}
-          style={styles.button}
-        >
-          Login
-        </Button>
+        {/* Description Section */}
+        <Text style={styles.description}>
+          Track your current stock of food, create and manage shopping lists and find deals
+        </Text>
+        {/* Get Started Button */}
         <Button
           onPress={() => router.push("/Register")}
           style={styles.button}
+          appearance="outline"
         >
-          Sign Up
+          Get Started
         </Button>
+        {/* Footer with Login Link */}
+        <View style={styles.footer}>
+          <Text>Already have an account? </Text>
+          <Text
+            style={styles.loginLink}
+            onPress={() => router.push("/Login")}
+          >
+            Log In
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -30,20 +46,47 @@ const Landing: React.FC<{ navigation: any }> = ({ navigation }) => {
 export default Landing;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   container: {
-    alignContent: "center",
-    justifyContent: "center",
-    marginTop: "75%",
-    textAlign: "center",
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  image: {
+    width: 100, // Adjust based on your image size
+    height: 100, // Adjust based on your image size
+    marginBottom: 30,
   },
   title: {
-    textAlign: "center",
-    marginBottom: "10%",
+    fontSize: 32,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 40,
+    color: 'gray',
+    paddingHorizontal: 20,
   },
   button: {
-    width: "50%",
-    alignSelf: "center",
-    // fontFamily: "Poppins-Medium",
-    marginBottom: "5%",
+    width: '60%',
+    borderColor: 'black',
+    borderWidth: 1,
+    backgroundColor: 'white',
+    marginBottom: 20,  
+    color: 'black',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  loginLink: {
+    color: '#1e90ff', // Blue color for the link
   },
 });

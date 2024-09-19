@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 import os
 import hmac
 import base64
+import sqlite3
+import uuid  # Add this at the top of the file to generate user IDs
+from typing import Optional
 
 # FastAPI app
 app = FastAPI()
@@ -26,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# SQLite setup using sqlite3
+DATABASE_FILE = "test.db"
 
 # Load environment variables from secrets.env for AWS Cognito configuration
 load_dotenv()
@@ -60,6 +66,98 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     username: str
+    
+# Models for item operations
+class ItemCreate(BaseModel):
+    item_name: str
+    item_description: Optional[str] = None
+    item_nutrition: Optional[str] = None
+    item_price: float
+    item_stock: int
+    item_type: Optional[str] = None
+    item_image: Optional[str] = None
+
+class ItemUpdate(BaseModel):
+    item_name: Optional[str]
+    item_description: Optional[str]
+    item_nutrition: Optional[str]
+    item_price: Optional[float]
+    item_stock: Optional[int]
+    item_type: Optional[str]
+    item_image: Optional[str]
+    
+    
+def init_db():
+    """Initialize the SQLite database and create a users table if it doesn't exist."""
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+     # Create users table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        user_id VARCHAR PRIMARY KEY,
+        user_email VARCHAR NOT NULL UNIQUE,
+        user_password VARCHAR NOT NULL,
+        user_type VARCHAR NOT NULL
+    )''')
+
+    # Create stores table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS stores (
+        store_id VARCHAR PRIMARY KEY,
+        store_name VARCHAR NOT NULL,
+        store_location VARCHAR NOT NULL,
+        store_owner_id VARCHAR,
+        store_flyer_link VARCHAR,
+        FOREIGN KEY (store_owner_id) REFERENCES users(user_id)
+    )''')
+
+    # Create lists table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS lists (
+        list_id VARCHAR PRIMARY KEY,
+        list_name VARCHAR NOT NULL,
+        list_image VARCHAR,
+        user_id VARCHAR NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+    )''')
+
+    # Create items table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS items (
+        item_id VARCHAR PRIMARY KEY,
+        item_name VARCHAR NOT NULL,
+        item_description VARCHAR,
+        item_nutrition VARCHAR,
+        item_price DECIMAL(10, 2),
+        item_stock INT,
+        item_type VARCHAR,
+        item_image VARCHAR
+    )''')
+
+    # Create list_item_lines table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS list_item_lines (
+        list_item_line_id VARCHAR PRIMARY KEY,
+        list_id VARCHAR NOT NULL,
+        item_id VARCHAR NOT NULL,
+        list_item_quantity INT,
+        FOREIGN KEY (list_id) REFERENCES lists(list_id),
+        FOREIGN KEY (item_id) REFERENCES items(item_id)
+    )''')
+    conn.commit()
+    conn.close()
+    
+
+# Helper function to connect to the database
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE_FILE)
+    conn.row_factory = sqlite3.Row  # To return dict-like rows
+    return conn
+
+# Initialize the database on app startup
+@app.on_event("startup")
+def on_startup():
+    init_db()
 
 # Utility functions
 def get_cognito_jwks():
@@ -122,12 +220,46 @@ def register(user: UserRegister):
                 {'Name': 'custom:role', 'Value': str(user.role)},
             ],
         )
-        return {"message": "User registered successfully"}
     except ClientError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.response['Error']['Message'],
         )
+        
+     # Add user details to SQLite DB
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+
+        # Generate a unique user_id using UUID
+        user_id = str(uuid.uuid4())
+
+        # Insert the new user into the users table, now with password and type
+        cursor.execute(
+            """
+            INSERT INTO users (user_id, user_email, user_password, user_type)
+            VALUES (?, ?, ?, ?)
+            """,
+            (user_id, user.email, user.password, user.role)
+        )
+        
+        conn.commit()
+        conn.close()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username or email already exists in SQLite")
+
+        
+    return {"message": "User registered successfully"}
+
+@app.get("/users")
+def get_users():
+    """Get users from the SQLite database."""
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users")
+    users = cursor.fetchall()
+    conn.close()
+    return {"users": users}
 
 @app.post("/token", response_model=dict)
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -200,6 +332,109 @@ def confirm_registration(user: UserConfirm):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.response['Error']['Message'],
         )
+# Create a new item
+@app.post("/items", status_code=201)
+def create_item(item: ItemCreate):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO items (item_name, item_description, item_nutrition, item_price, item_stock, item_type, item_image)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                item.item_name,
+                item.item_description,
+                item.item_nutrition,
+                item.item_price,
+                item.item_stock,
+                item.item_type,
+                item.item_image,
+            )
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Item with the same name already exists")
+    finally:
+        conn.close()
+
+    return {"message": "Item created successfully"}
+
+# Read all items
+@app.get("/items")
+def read_items():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM items")
+    items = cursor.fetchall()
+    conn.close()
+
+    if not items:
+        raise HTTPException(status_code=404, detail="No items found")
+
+    return {"items": [dict(item) for item in items]}
+
+# Read specific item by ID
+@app.get("/items/{item_id}")
+def read_item(item_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM items WHERE item_id = ?", (item_id,))
+    item = cursor.fetchone()
+    conn.close()
+
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    return dict(item)
+
+# Update an item by ID
+@app.put("/items/{item_id}")
+def update_item(item_id: str, item: ItemUpdate):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Get the existing item
+    cursor.execute("SELECT * FROM items WHERE item_id = ?", (item_id,))
+    existing_item = cursor.fetchone()
+
+    if existing_item is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Prepare update values
+    update_data = {key: value for key, value in item.dict().items() if value is not None}
+
+    update_fields = ', '.join([f"{key} = ?" for key in update_data.keys()])
+    update_values = list(update_data.values())
+    update_values.append(item_id)
+
+    cursor.execute(f"UPDATE items SET {update_fields} WHERE item_id = ?", update_values)
+    conn.commit()
+    conn.close()
+
+    return {"message": "Item updated successfully"}
+
+# Delete an item by ID
+@app.delete("/items/{item_id}", status_code=204)
+def delete_item(item_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM items WHERE item_id = ?", (item_id,))
+    item = cursor.fetchone()
+
+    if item is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    cursor.execute("DELETE FROM items WHERE item_id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+
+    return {"message": "Item deleted successfully"} 
 
 # Main function to run the application
 if __name__ == "__main__":

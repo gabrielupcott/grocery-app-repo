@@ -14,6 +14,8 @@ interface FormValues {
   email: string;
   password: string;
   confirmPassword: string;
+  name: string;
+  location: string;
   role: number;
 }
 
@@ -38,6 +40,8 @@ const RegisterSchema = Yup.object().shape({
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Passwords must match")
     .required("Required"),
+  name: Yup.string().required("Required"),
+  location: Yup.string().required("Required"),
   role: Yup.number().required("Required"),
 });
 
@@ -50,6 +54,11 @@ const Register: React.FC = () => {
   ) => {
     try {
       console.log("Registering with values:", values);
+      if (values.email === "" || values.password === "" || values.name === "" || values.location === "") {
+        setGeneralError("Please fill in all fields.");
+        setSubmitting(false);
+        return;
+      }
       const response = await axios.post(
         API_URLS.REGISTER,
         {
@@ -64,12 +73,12 @@ const Register: React.FC = () => {
       );
 
       if (response.status === 200) {
-      // Store the token in AsyncStorage
-      await SecureStore.setItemAsync("userName", values.email);
+        // Store Name, Location, and Email in Secure Store
+        await SecureStore.setItemAsync("userName", values.name);
+        await SecureStore.setItemAsync("userLocation", values.location);
+        await SecureStore.setItemAsync("userEmail", values.email);
+
         router.push("/Verify");
-        // Alert.alert("Success", "User registered successfully!", [
-        //   { text: "OK", onPress: () => navigation.navigate("Login") },
-        // ]);
       }
     } catch (error) {
       const axiosError = error as CustomAxiosError;
@@ -93,6 +102,8 @@ const Register: React.FC = () => {
           email: "",
           password: "",
           confirmPassword: "",
+          name: "",
+          location: "",
           role: 1, // Default role value
         }}
         validationSchema={RegisterSchema}
@@ -107,16 +118,36 @@ const Register: React.FC = () => {
           touched,
           isSubmitting,
           setFieldValue,
+          isValid,
         }) => (
           <View style={styles.form}>
             <Text category="h2" style={{ textAlign: "center" }}>
               Register
             </Text>
             <Input
+              placeholder="Name"
+              value={values.name}
+              onChangeText={handleChange("name")}
+              onBlur={handleBlur("name")}
+              style={styles.input}
+              status={touched.name && errors.name ? "danger" : "basic"}
+              caption={touched.name && errors.name ? errors.name : ""}
+            />
+            <Input
+              placeholder="Location"
+              value={values.location}
+              onChangeText={handleChange("location")}
+              onBlur={handleBlur("location")}
+              style={styles.input}
+              status={touched.location && errors.location ? "danger" : "basic"}
+              caption={touched.location && errors.location ? errors.location : ""}
+            />
+            <Input
               placeholder="Email"
               value={values.email}
               onChangeText={handleChange("email")}
               onBlur={handleBlur("email")}
+              testID="email-field"
               style={styles.input}
               status={touched.email && errors.email ? "danger" : "basic"}
               caption={touched.email && errors.email ? errors.email : ""}
@@ -157,8 +188,14 @@ const Register: React.FC = () => {
             ) : null}
             <Button
               style={styles.submitButton}
-              onPress={() => handleSubmit()}
+              onPress={() => {
+                console.log("Form isValid status: ", isValid);
+                console.log(values);
+                isValid && handleSubmit();
+              }}
               disabled={isSubmitting}
+              appearance="outline"
+              testID="register-button"
             >
               Register
             </Button>
