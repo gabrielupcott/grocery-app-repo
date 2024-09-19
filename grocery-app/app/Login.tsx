@@ -54,6 +54,7 @@ const Login: React.FC = () => {
         }
       );
 
+
       console.log("Login response:", response);
 
       const token = response.data.access_token;
@@ -61,6 +62,20 @@ const Login: React.FC = () => {
       // Store the token in AsyncStorage
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("userName", values.username);
+
+
+      const response2 = await axios.get(`${API_URLS.GET_USERID_BY_EMAIL}?email=${values.username}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // console.log("User ID:", response.data.user_id);
+
+      const user_id = response2.data.user_id;
+
+      console.log("User ID:", user_id);
+
+      await SecureStore.setItemAsync("user_id", user_id);
 
       // TODO: Implement API endpoint to retrieve user data and find role, then store async
 

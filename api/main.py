@@ -60,6 +60,9 @@ class UserLogin(BaseModel):
 class UserConfirm(BaseModel):
     username: str
     confirmation_code: str
+    
+class UserResendConfirm(BaseModel):
+    username: str
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -76,6 +79,7 @@ class ItemCreate(BaseModel):
     item_stock: int
     item_type: Optional[str] = None
     item_image: Optional[str] = None
+    user_id: str
 
 class ItemUpdate(BaseModel):
     item_name: Optional[str]
@@ -121,17 +125,19 @@ def init_db():
         FOREIGN KEY (user_id) REFERENCES users(user_id)
     )''')
 
-    # Create items table
+    # Create items table with auto-incrementing item_id
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS items (
-        item_id VARCHAR PRIMARY KEY,
+        item_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- This line is modified
         item_name VARCHAR NOT NULL,
         item_description VARCHAR,
         item_nutrition VARCHAR,
         item_price DECIMAL(10, 2),
         item_stock INT,
         item_type VARCHAR,
-        item_image VARCHAR
+        item_image VARCHAR,
+        user_id VARCHAR NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
     )''')
 
     # Create list_item_lines table
@@ -221,6 +227,7 @@ def register(user: UserRegister):
             ],
         )
     except ClientError as e:
+        print(e.response)  # For debugging
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.response['Error']['Message'],
@@ -246,6 +253,7 @@ def register(user: UserRegister):
         conn.commit()
         conn.close()
     except sqlite3.IntegrityError:
+        print("Username or email already exists in SQLite")  # For debugging
         raise HTTPException(status_code=400, detail="Username or email already exists in SQLite")
 
         
@@ -294,6 +302,7 @@ def app_login(user: UserLogin):
         )
         return {"access_token": response['AuthenticationResult']['AccessToken'], "token_type": "bearer"}
     except ClientError as e:
+        print(e.response)  # For debugging
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.response['Error']['Message'],
@@ -316,6 +325,22 @@ def logout(token: str = Depends(oauth2_scheme)):
 async def protected_route(current_user: User = Depends(get_current_user)):
     return {"message": f"Hello {current_user.username}, you have access to this protected route!"}
 
+@app.post("/resend-confirmation-code")
+def resend_confirmation_code(user: UserResendConfirm):
+    try:
+        cognito_client.resend_confirmation_code(
+            ClientId=COGNITO_CLIENT_ID,
+            SecretHash=get_secret_hash(user.username),
+            Username=user.username
+        )
+        return {"message": "Confirmation code resent successfully"}
+    except ClientError as e:
+        print(e.response)  # For debugging
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.response['Error']['Message'],
+        )
+
 @app.post("/confirm-registration")
 def confirm_registration(user: UserConfirm):
     print(user.username, user.confirmation_code)
@@ -328,10 +353,113 @@ def confirm_registration(user: UserConfirm):
         )
         return {"message": "User registration confirmed successfully"}
     except ClientError as e:
+        print(e.response)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.response['Error']['Message'],
         )
+        
+        
+# Add a route to get the current user id by email
+@app.get("/user-id")
+async def get_user_id(email: str, current_user: User = Depends(get_current_user)):
+    
+    # Need to account for @ turning into %40 in the URL
+    email = email.replace("%40", "@")
+    print(email)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id FROM users WHERE user_email = ?", (email,))
+    user_id = cursor.fetchone()
+    conn.close()
+
+    if user_id is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"user_id": user_id[0]}
+
+
+@app.post("/populate-items")
+def populate_items():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Sample items data
+    # sample_items = [
+    #     {
+    #         "item_name": "Apple",
+    #         "item_description": "Fresh red apples",
+    #         "item_nutrition": "50 calories",
+    #         "item_price": 0.99,
+    #         "item_stock": 100,
+    #         "item_type": "Fruit",
+    #         "item_image": "apple_image_url",
+    #         "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+    #     },
+    #     {
+    #         "item_name": "Banana",
+    #         "item_description": "Yellow ripe bananas",
+    #         "item_nutrition": "100 calories",
+    #         "item_price": 0.69,
+    #         "item_stock": 200,
+    #         "item_type": "Fruit",
+    #         "item_image": "banana_image_url",
+    #         "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+    #     },
+    #     {
+    #         "item_name": "Chicken Breast",
+    #         "item_description": "Boneless skinless chicken breast",
+    #         "item_nutrition": "150 calories per serving",
+    #         "item_price": 5.99,
+    #         "item_stock": 50,
+    #         "item_type": "Meat",
+    #         "item_image": "chicken_breast_image_url",
+    #         "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+    #     }
+    # ]
+    
+    sample_items = [
+        {
+            "item_name": "New Apple",
+            "item_description": "Fresh red apples",
+            "item_nutrition": "50 calories",
+            "item_price": 0.99,
+            "item_stock": 0,
+            "item_type": "Fruit",
+            "item_image": "apple_image_url",
+            "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+        },
+
+    ]
+
+    # Insert each item into the database
+    for item in sample_items:
+        try:
+            cursor.execute(
+                """
+                INSERT INTO items (item_name, item_description, item_nutrition, item_price, item_stock, item_type, item_image, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item['item_name'],
+                    item['item_description'],
+                    item['item_nutrition'],
+                    item['item_price'],
+                    item['item_stock'],
+                    item['item_type'],
+                    item['item_image'],
+                    item['user_id']
+                )
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(status_code=400, detail=f"Item {item['item_name']} already exists")
+    
+    conn.commit()
+    conn.close()
+
+    return {"message": "Sample items populated successfully"}
+        
 # Create a new item
 @app.post("/items", status_code=201)
 def create_item(item: ItemCreate):
@@ -341,7 +469,7 @@ def create_item(item: ItemCreate):
     try:
         cursor.execute(
             """
-            INSERT INTO items (item_name, item_description, item_nutrition, item_price, item_stock, item_type, item_image)
+            INSERT INTO items (item_name, item_description, item_nutrition, item_price, item_stock, item_type, item_image, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -352,6 +480,7 @@ def create_item(item: ItemCreate):
                 item.item_stock,
                 item.item_type,
                 item.item_image,
+                item.user_id
             )
         )
         conn.commit()
@@ -362,9 +491,25 @@ def create_item(item: ItemCreate):
 
     return {"message": "Item created successfully"}
 
+
+# Get items by user id
+@app.get("/items/user/{user_id}")
+def read_items_by_user(user_id: str, current_user: User = Depends(get_current_user)):
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM items WHERE user_id = ?", (user_id,))
+    items = cursor.fetchall()
+    conn.close()
+
+    # if not items:
+    #     raise HTTPException(status_code=404, detail="No items found")
+
+    return {"items": [dict(item) for item in items]}
+
 # Read all items
 @app.get("/items")
-def read_items():
+def read_items(current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM items")
@@ -378,7 +523,7 @@ def read_items():
 
 # Read specific item by ID
 @app.get("/items/{item_id}")
-def read_item(item_id: str):
+def read_item(item_id: str, current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM items WHERE item_id = ?", (item_id,))
@@ -392,7 +537,7 @@ def read_item(item_id: str):
 
 # Update an item by ID
 @app.put("/items/{item_id}")
-def update_item(item_id: str, item: ItemUpdate):
+def update_item(item_id: str, item: ItemUpdate, current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -419,7 +564,7 @@ def update_item(item_id: str, item: ItemUpdate):
 
 # Delete an item by ID
 @app.delete("/items/{item_id}", status_code=204)
-def delete_item(item_id: str):
+def delete_item(item_id: str, current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
     cursor = conn.cursor()
 

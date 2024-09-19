@@ -9,6 +9,7 @@ import { useState } from "react";
 import { API_URLS } from "../constants/constants";
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
+import Toast from "react-native-root-toast";
 
 interface FormValues {
   email: string;
@@ -78,14 +79,25 @@ const Register: React.FC = () => {
         await SecureStore.setItemAsync("userLocation", values.location);
         await SecureStore.setItemAsync("userEmail", values.email);
 
-        router.push("/Verify");
+        // Display success toast
+        Toast.show("Verification successful! Please Login", {
+          duration: Toast.durations.LONG,
+          position: Toast.positions.BOTTOM,
+          shadow: true,
+          animation: true,
+          hideOnPress: true,
+          delay: 0,
+        });
+
+        router.push("/Login");
+
       }
     } catch (error) {
       const axiosError = error as CustomAxiosError;
       if (axiosError.response) {
         const errorMessage = axiosError.response.data.messages
           ? axiosError.response.data.messages.join("\n")
-          : "Registration failed. Please try again.";
+          : "Registration failed. Does this email already have an account?";
         setGeneralError(errorMessage);
       } else {
         setGeneralError("An unknown error occurred. Please try again.");

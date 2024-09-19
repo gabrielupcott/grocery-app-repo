@@ -21,6 +21,7 @@
   "dependencies": {
     "@eva-design/eva": "^2.2.0",
     "@expo/vector-icons": "^14.0.2",
+    "@react-native-segmented-control/segmented-control": "^2.5.4",
     "@react-native-vector-icons/material-icons": "^0.0.1-alpha.25",
     "@react-navigation/native": "^6.0.2",
     "@testing-library/react-native": "^12.7.2",
@@ -43,7 +44,8 @@
     "react-dom": "18.2.0",
     "react-native": "0.74.5",
     "react-native-confirmation-code-field": "^7.4.0",
-    "react-native-reanimated": "~3.10.1",
+    "react-native-floating-action": "^1.22.0",
+    "react-native-reanimated": "^3.10.1",
     "react-native-root-toast": "^3.6.0",
     "react-native-safe-area-context": "4.10.5",
     "react-native-screens": "3.31.1",
