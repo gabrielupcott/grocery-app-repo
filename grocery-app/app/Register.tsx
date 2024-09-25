@@ -5,7 +5,6 @@ import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { useState } from "react";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URLS } from "../constants/constants";
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
@@ -51,15 +50,9 @@ const Register: React.FC = () => {
 
   const onSubmit = async (
     values: FormValues,
-    { setSubmitting, setFieldError }: FormikHelpers<FormValues>
+    { setSubmitting }: FormikHelpers<FormValues>
   ) => {
     try {
-      console.log("Registering with values:", values);
-      if (values.email === "" || values.password === "" || values.name === "" || values.location === "") {
-        setGeneralError("Please fill in all fields.");
-        setSubmitting(false);
-        return;
-      }
       const response = await axios.post(
         API_URLS.REGISTER,
         {
@@ -74,23 +67,29 @@ const Register: React.FC = () => {
       );
 
       if (response.status === 200) {
-        // Store Name, Location, and Email in Secure Store
-        await SecureStore.setItemAsync("userName", values.name);
-        await SecureStore.setItemAsync("userLocation", values.location);
-        await SecureStore.setItemAsync("userEmail", values.email);
+        try {
+          // Store Name, Location, and Email in Secure Store
+          await SecureStore.setItemAsync("userName", values.name);
+          await SecureStore.setItemAsync("userLocation", values.location);
+          await SecureStore.setItemAsync("userEmail", values.email);
 
-        // Display success toast
-        Toast.show("Verification successful! Please Login", {
-          duration: Toast.durations.LONG,
-          position: Toast.positions.BOTTOM,
-          shadow: true,
-          animation: true,
-          hideOnPress: true,
-          delay: 0,
-        });
+          // Show success toast
+          Toast.show("Verification successful! Please Login", {
+            duration: Toast.durations.LONG,
+            position: Toast.positions.BOTTOM,
+            shadow: true,
+            animation: true,
+            hideOnPress: true,
+          });
 
-        router.push("/Login");
+          router.push({
+            pathname: '/Login',
+            params: { registrationSuccess: "true" }
+          });
 
+        } catch (error) {
+          setGeneralError("Failed to store user data securely. Please try again.");
+        }
       }
     } catch (error) {
       const axiosError = error as CustomAxiosError;
@@ -200,11 +199,7 @@ const Register: React.FC = () => {
             ) : null}
             <Button
               style={styles.submitButton}
-              onPress={() => {
-                console.log("Form isValid status: ", isValid);
-                console.log(values);
-                isValid && handleSubmit();
-              }}
+              onPress={() => handleSubmit()}
               disabled={isSubmitting}
               appearance="outline"
               testID="register-button"

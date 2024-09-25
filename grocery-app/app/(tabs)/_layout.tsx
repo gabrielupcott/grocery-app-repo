@@ -40,9 +40,9 @@ export default function TabLayout() {
         },
         tabBarShowLabel: false,
       })}>
-      <Tabs.Screen name="index"/>
-      <Tabs.Screen name="Lists"/>
-      <Tabs.Screen name="Stores"/>
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="Lists" />
+      <Tabs.Screen name="Stores" />
     </Tabs>
   );
 }

@@ -37,10 +37,11 @@ const PantryItem: React.FC<PantryItemProps> = ({ item, onEdit, onDelete }) => {
         style={styles.image}
       /> */}
 
-            <Image
-                source={require('../../assets/images/no-image.png')}
-                style={styles.image}
-            />
+{item.item_image ? (
+                                    <Image source={{ uri: item.item_image }} style={styles.image}  />
+                                ) : (
+                                    <Image source={require('../../assets/images/no-image.png')} style={styles.image} />
+                                )}
 
             {/* Center: Item name and stock count */}
             <View style={styles.details}>

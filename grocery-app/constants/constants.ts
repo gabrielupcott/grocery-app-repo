@@ -5,6 +5,7 @@ const BASE_URL = "http://10.0.2.2:8000";
 // const BASE_URL = "http://127.0.0.1:8000";
 
 export const API_URLS = {
+  API_TEST: `${BASE_URL}/`,
   LOGIN: `${BASE_URL}/app-login`,
   REGISTER: `${BASE_URL}/register`,
   CONFIRM_REGISTRATION: `${BASE_URL}/confirm-registration`,
@@ -12,5 +13,7 @@ export const API_URLS = {
   PROTECTED_ROUTE: `${BASE_URL}/protected`,
   GET_ITEMS_BY_USER: `${BASE_URL}/items/user`,
   GET_USERID_BY_EMAIL: `${BASE_URL}/user-id`,
+  ADD_ITEM: `${BASE_URL}/items`,
+  PRODUCT_INFO: `${BASE_URL}/product-info`,
   // Add other endpoints as needed
 };

@@ -17,6 +17,7 @@ import base64
 import sqlite3
 import uuid  # Add this at the top of the file to generate user IDs
 from typing import Optional
+import bcrypt
 
 # FastAPI app
 app = FastAPI()
@@ -39,6 +40,7 @@ COGNITO_POOL_ID = os.getenv("COGNITO_POOL_ID")
 COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
 COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
 COGNITO_REGION = os.getenv("COGNITO_REGION")
+OPEN_FOOD_FACTS_API_URL = os.getenv("OPEN_FOOD_FACTS_API_URL")
 
 # Dependency
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -89,6 +91,7 @@ class ItemUpdate(BaseModel):
     item_stock: Optional[int]
     item_type: Optional[str]
     item_image: Optional[str]
+    user_id: Optional[str]
     
     
 def init_db():
@@ -213,14 +216,24 @@ def get_secret_hash(username):
     return base64.b64encode(dig).decode()
 
 # Routes
+
+# Endpoint to test if API is running
+@app.get("/")
+def read_root():
+    return {"message": "API up and running"}
+
+
 @app.post("/register")
 def register(user: UserRegister):
     try:
+        # Hash the password before saving it
+        hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
         cognito_client.sign_up(
             ClientId=COGNITO_CLIENT_ID,
             SecretHash=get_secret_hash(user.username),
             Username=user.username,
-            Password=user.password,
+            Password=user.password,  # Cognito stores the raw password
             UserAttributes=[
                 {'Name': 'email', 'Value': user.email},
                 {'Name': 'custom:role', 'Value': str(user.role)},
@@ -233,7 +246,7 @@ def register(user: UserRegister):
             detail=e.response['Error']['Message'],
         )
         
-     # Add user details to SQLite DB
+    # Add user details to SQLite DB
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
@@ -241,13 +254,13 @@ def register(user: UserRegister):
         # Generate a unique user_id using UUID
         user_id = str(uuid.uuid4())
 
-        # Insert the new user into the users table, now with password and type
+        # Insert the new user into the users table with hashed password
         cursor.execute(
             """
             INSERT INTO users (user_id, user_email, user_password, user_type)
             VALUES (?, ?, ?, ?)
             """,
-            (user_id, user.email, user.password, user.role)
+            (user_id, user.email, hashed_password, user.role)
         )
         
         conn.commit()
@@ -256,7 +269,6 @@ def register(user: UserRegister):
         print("Username or email already exists in SQLite")  # For debugging
         raise HTTPException(status_code=400, detail="Username or email already exists in SQLite")
 
-        
     return {"message": "User registered successfully"}
 
 @app.get("/users")
@@ -291,6 +303,30 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.post("/app-login", response_model=dict)
 def app_login(user: UserLogin):
     try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+
+        # Retrieve the hashed password from the database
+        cursor.execute("SELECT user_password FROM users WHERE user_email = ?", (user.username,))
+        result = cursor.fetchone()
+        conn.close()
+
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        hashed_password = result[0]
+
+        # Verify the password
+        if not bcrypt.checkpw(user.password.encode('utf-8'), hashed_password.encode('utf-8')):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password"
+            )
+
+        # Assuming authentication via AWS Cognito (if applicable)
         response = cognito_client.initiate_auth(
             ClientId=COGNITO_CLIENT_ID,
             AuthFlow='USER_PASSWORD_AUTH',
@@ -302,7 +338,6 @@ def app_login(user: UserLogin):
         )
         return {"access_token": response['AuthenticationResult']['AccessToken'], "token_type": "bearer"}
     except ClientError as e:
-        print(e.response)  # For debugging
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.response['Error']['Message'],
@@ -385,52 +420,48 @@ def populate_items():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Sample items data
-    # sample_items = [
-    #     {
-    #         "item_name": "Apple",
-    #         "item_description": "Fresh red apples",
-    #         "item_nutrition": "50 calories",
-    #         "item_price": 0.99,
-    #         "item_stock": 100,
-    #         "item_type": "Fruit",
-    #         "item_image": "apple_image_url",
-    #         "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
-    #     },
-    #     {
-    #         "item_name": "Banana",
-    #         "item_description": "Yellow ripe bananas",
-    #         "item_nutrition": "100 calories",
-    #         "item_price": 0.69,
-    #         "item_stock": 200,
-    #         "item_type": "Fruit",
-    #         "item_image": "banana_image_url",
-    #         "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
-    #     },
-    #     {
-    #         "item_name": "Chicken Breast",
-    #         "item_description": "Boneless skinless chicken breast",
-    #         "item_nutrition": "150 calories per serving",
-    #         "item_price": 5.99,
-    #         "item_stock": 50,
-    #         "item_type": "Meat",
-    #         "item_image": "chicken_breast_image_url",
-    #         "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
-    #     }
-    # ]
-    
+    # Sample items data with nutritional information stored as JSON strings
     sample_items = [
         {
-            "item_name": "New Apple",
+            "item_name": "Apple",
             "item_description": "Fresh red apples",
-            "item_nutrition": "50 calories",
+            "item_nutrition": '{"Calories": "52", "Carbohydrates": "14g", "Protein": "0.3g", "Fat": "0.2g"}',  # Nutritional information as JSON
             "item_price": 0.99,
-            "item_stock": 0,
+            "item_stock": 100,
             "item_type": "Fruit",
             "item_image": "apple_image_url",
             "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
         },
-
+        {
+            "item_name": "Banana",
+            "item_description": "Yellow ripe bananas",
+            "item_nutrition": '{"Calories": "89", "Carbohydrates": "23g", "Protein": "1.1g", "Fat": "0.3g"}',  # Nutritional information as JSON
+            "item_price": 0.69,
+            "item_stock": 200,
+            "item_type": "Fruit",
+            "item_image": "banana_image_url",
+            "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+        },
+        {
+            "item_name": "Chicken Breast",
+            "item_description": "Boneless skinless chicken breast",
+            "item_nutrition": '{"Calories": "165", "Protein": "31g", "Fat": "3.6g", "Carbohydrates": "0g"}',  # Nutritional information as JSON
+            "item_price": 5.99,
+            "item_stock": 50,
+            "item_type": "Meat",
+            "item_image": "chicken_breast_image_url",
+            "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+        },
+        {
+            "item_name": "Almonds",
+            "item_description": "Roasted unsalted almonds",
+            "item_nutrition": '{"Calories": "576", "Protein": "21g", "Fat": "49g", "Carbohydrates": "22g", "Fiber": "12g"}',  # Nutritional information as JSON
+            "item_price": 10.99,
+            "item_stock": 150,
+            "item_type": "Nuts",
+            "item_image": "almonds_image_url",
+            "user_id": "f1b11837-7fbb-4a87-8848-b296dafe3d9b"  # Replace with an existing user_id
+        }
     ]
 
     # Insert each item into the database
@@ -444,7 +475,7 @@ def populate_items():
                 (
                     item['item_name'],
                     item['item_description'],
-                    item['item_nutrition'],
+                    item['item_nutrition'],  # Nutritional information stored as JSON string
                     item['item_price'],
                     item['item_stock'],
                     item['item_type'],
@@ -459,6 +490,7 @@ def populate_items():
     conn.close()
 
     return {"message": "Sample items populated successfully"}
+
         
 # Create a new item
 @app.post("/items", status_code=201)
@@ -470,7 +502,7 @@ def create_item(item: ItemCreate):
         cursor.execute(
             """
             INSERT INTO items (item_name, item_description, item_nutrition, item_price, item_stock, item_type, item_image, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 item.item_name,
@@ -538,6 +570,7 @@ def read_item(item_id: str, current_user: User = Depends(get_current_user)):
 # Update an item by ID
 @app.put("/items/{item_id}")
 def update_item(item_id: str, item: ItemUpdate, current_user: User = Depends(get_current_user)):
+    print(item)
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -580,6 +613,76 @@ def delete_item(item_id: str, current_user: User = Depends(get_current_user)):
     conn.close()
 
     return {"message": "Item deleted successfully"} 
+
+@app.get("/product-info/{barcode}", response_model=dict)
+async def get_product_info(barcode: str, current_user: Optional[User] = Depends(get_current_user)):
+    """
+    Fetch product info from Open Food Facts based on the barcode (UPC).
+    Requires authentication.
+    """
+    try:
+        # Make the request to Open Food Facts API
+        async with httpx.AsyncClient() as client:
+            url = OPEN_FOOD_FACTS_API_URL.format(barcode=barcode)
+            response = await client.get(url)
+            response.raise_for_status()  # Raise an error if the request failed
+
+        # Check if the product was found
+        product_data = response.json()
+        if product_data.get('status') == 0:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+        return product_data
+
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to contact external API")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail="Failed to fetch product information")
+
+# Endpoint to get all users
+@app.get("/users", response_model=list[dict])
+def get_all_users(current_user: User = Depends(get_current_user)):
+    """
+    Retrieve all users from the SQLite database.
+    Requires authentication.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, user_email, user_type FROM users")
+    users = cursor.fetchall()
+    conn.close()
+
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
+
+    # Convert SQLite Row to dictionary
+    return [{"user_id": user["user_id"], "email": user["user_email"], "role": user["user_type"]} for user in users]
+
+
+# Endpoint to delete a user by ID
+@app.delete("/users/{user_id}", status_code=204)
+def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Delete a user from the SQLite database by user_id.
+    Requires authentication.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        conn.close()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    cursor.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+    return {"message": "User deleted successfully"}
+
+
 
 # Main function to run the application
 if __name__ == "__main__":

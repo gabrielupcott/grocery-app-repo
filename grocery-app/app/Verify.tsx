@@ -82,7 +82,7 @@ const Verify: React.FC = () => {
       });
 
       // Redirect to login screen
-      router.push("/Login");
+      router.replace("/Login");
 
       setSubmitting(false);
     } catch (error) {

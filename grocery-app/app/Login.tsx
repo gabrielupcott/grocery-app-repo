@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView, View, StyleSheet } from "react-native";
 import { Button, Text, Input } from "@ui-kitten/components";
 import axios, { AxiosError, AxiosResponse } from "axios";
@@ -6,7 +6,8 @@ import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { API_URLS } from "../constants/constants"; // Assuming you have a constants file
 import * as SecureStore from 'expo-secure-store';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import Toast from "react-native-root-toast"; // Import Toast
 
 interface FormValues {
   username: string;
@@ -35,14 +36,49 @@ const LoginSchema = Yup.object().shape({
 
 const Login: React.FC = () => {
   const [generalError, setGeneralError] = useState<string>("");
+  const { registrationSuccess } = useLocalSearchParams();
+
+  useEffect(() => {
+    if (registrationSuccess === "true") {
+      Toast.show("Registration successful! Please log in.", {
+        duration: Toast.durations.LONG,
+        position: Toast.positions.BOTTOM,
+        shadow: true,
+        animation: true,
+        hideOnPress: true,
+      });
+    }
+  }, [registrationSuccess]);
+
+  const testAPI = async () => {
+    try {
+      const response = await axios.get(`${API_URLS.API_TEST}`, { timeout: 5000 });
+      console.log("API Test response:", response);
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.code === 'ECONNABORTED') {
+        setGeneralError("API request timed out. Please try again.");
+      } else {
+        setGeneralError("An error occurred while connecting to the API.");
+      }
+      console.error("API Test error:", error);
+    }
+  };
+
+  useEffect(() => {
+    testAPI();
+  }, []);
 
   const onSubmit = async (
     values: FormValues,
     { setSubmitting, setFieldError }: FormikHelpers<FormValues>
   ) => {
     try {
+      const test_response = await axios.get(`${API_URLS.API_TEST}`);
+      console.log("API Test response:", test_response);
+
       const response = await axios.post(
-        `${API_URLS.LOGIN}`, // Adjust your endpoint accordingly
+        `${API_URLS.LOGIN}`,
         {
           username: values.username,
           password: values.password,
@@ -51,53 +87,42 @@ const Login: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
+          timeout: 5000, // Adding timeout here too
         }
       );
-
 
       console.log("Login response:", response);
 
       const token = response.data.access_token;
 
-      // Store the token in AsyncStorage
+      // Store the token in SecureStore
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("userName", values.username);
-
 
       const response2 = await axios.get(`${API_URLS.GET_USERID_BY_EMAIL}?email=${values.username}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      // console.log("User ID:", response.data.user_id);
 
       const user_id = response2.data.user_id;
-
       console.log("User ID:", user_id);
 
       await SecureStore.setItemAsync("user_id", user_id);
 
-      // TODO: Implement API endpoint to retrieve user data and find role, then store async
-
       if (response.status === 200) {
-        // navigation.navigate("Main");
-        router.push('/(tabs)');
+        router.replace('/(tabs)');
       }
     } catch (error) {
       const axiosError = error as CustomAxiosError;
-      console.error("Login error:", axiosError);
 
-      if (
-        axiosError.response &&
-        axiosError.response.data &&
-        axiosError.response.data.messages
-      ) {
+      if (axiosError.code === 'ECONNABORTED') {
+        setGeneralError("Request timed out. Please try again.");
+      } else if (axiosError.response?.data?.messages) {
         const errorMessage = axiosError.response.data.messages[0];
         setGeneralError(errorMessage);
       } else {
-        setGeneralError(
-          "An unexpected error occurred. Check your login information."
-        );
+        setGeneralError("An unexpected error occurred. Check your login information.");
       }
     } finally {
       setSubmitting(false);
@@ -107,13 +132,16 @@ const Login: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-        <Text style={styles.title} category="h1">
-          Login
-        </Text>
+        <Text style={styles.title} category="h1">Login</Text>
 
-        {generalError ? (
+        {registrationSuccess === "true" && (
+          <Text style={styles.subtitle}>Registration successful! Please log in.</Text>
+        )}
+
+        {generalError.length > 0 ? (
           <Text style={styles.generalError}>{generalError}</Text>
         ) : null}
+
         <Formik
           initialValues={{ username: "", password: "" }}
           validationSchema={LoginSchema}
@@ -134,12 +162,8 @@ const Login: React.FC = () => {
                 value={values.username}
                 placeholder="Email"
                 style={styles.input}
-                status={
-                  touched.username && errors.username ? "danger" : "basic"
-                }
-                caption={
-                  touched.username && errors.username ? errors.username : ""
-                }
+                status={touched.username && errors.username ? "danger" : "basic"}
+                caption={touched.username && errors.username ? errors.username : ""}
               />
 
               <Input
@@ -149,12 +173,8 @@ const Login: React.FC = () => {
                 placeholder="Password"
                 style={styles.input}
                 secureTextEntry={true}
-                status={
-                  touched.password && errors.password ? "danger" : "basic"
-                }
-                caption={
-                  touched.password && errors.password ? errors.password : ""
-                }
+                status={touched.password && errors.password ? "danger" : "basic"}
+                caption={touched.password && errors.password ? errors.password : ""}
               />
 
               <Button
@@ -174,7 +194,7 @@ const Login: React.FC = () => {
           <Button
             appearance="ghost"
             status="primary"
-            onPress={() => router.push('/Register')}
+            onPress={() => router.replace('/Register')}
           >
             Sign Up
           </Button>
@@ -210,7 +230,6 @@ const styles = StyleSheet.create({
   button: {
     width: "50%",
     alignSelf: "center",
-    // fontFamily: "Poppins-Medium",
   },
   bottomContainer: {
     position: "absolute",

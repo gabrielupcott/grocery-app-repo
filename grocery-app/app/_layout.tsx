@@ -67,13 +67,15 @@ function RootLayoutNav() {
 
   return (
     <ApplicationProvider {...eva} theme={{ ...eva.light, ...theme }}>
-        <Stack screenOptions={{headerShown: false}}>
-          <Stack.Screen name="index"  options={{ headerShown: false }} />
-          <Stack.Screen name="Login"  options={{ headerShown: false }} />
-          <Stack.Screen name="Register"  options={{ headerShown: false }} />
-          <Stack.Screen name="Verify"  options={{ headerShown: false }} />
-          {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
-        </Stack>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="Login" options={{
+          headerShown: false, gestureEnabled: false, // Disable swipe back gesture
+        }} />
+        <Stack.Screen name="Register" options={{ headerShown: false }} />
+        <Stack.Screen name="Verify" options={{ headerShown: false }} />
+        {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
+      </Stack>
     </ApplicationProvider>
   );
 }
