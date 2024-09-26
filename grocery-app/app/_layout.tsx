@@ -73,7 +73,7 @@ function RootLayoutNav() {
           headerShown: false, gestureEnabled: false, // Disable swipe back gesture
         }} />
         <Stack.Screen name="Register" options={{ headerShown: false }} />
-        <Stack.Screen name="Verify" options={{ headerShown: false }} />
+        {/* <Stack.Screen name="Verify" options={{ headerShown: false }} /> */}
         {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
       </Stack>
     </ApplicationProvider>
