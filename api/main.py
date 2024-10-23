@@ -93,6 +93,15 @@ class ItemUpdate(BaseModel):
     item_image: Optional[str]
     user_id: Optional[str]
     
+class ListCreate(BaseModel):
+    list_name: str
+    list_image: Optional[str] = None
+    user_id: str
+
+class ListUpdate(BaseModel):
+    list_name: Optional[str]
+    list_image: Optional[str]
+    user_id: Optional[str]
     
 def init_db():
     """Initialize the SQLite database and create a users table if it doesn't exist."""
@@ -638,6 +647,251 @@ async def get_product_info(barcode: str, current_user: Optional[User] = Depends(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to contact external API")
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail="Failed to fetch product information")
+
+@app.post("/populate-example-list", status_code=201)
+def populate_example_list(user_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Generate a unique list_id
+    list_id = str(uuid.uuid4())
+
+    # Insert a new list into the lists table
+    try:
+        cursor.execute(
+            """
+            INSERT INTO lists (list_id, list_name, list_image, user_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                list_id,
+                "Example Food List",  # List name
+                None,  # No image
+                user_id  # The user who owns the list
+            )
+        )
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Failed to create the example list")
+
+    # Define a few example items
+    example_items = [
+        {
+            "item_name": "Milk",
+            "item_description": "1 gallon of whole milk",
+            "item_nutrition": '{"Calories": "150", "Protein": "8g", "Carbohydrates": "12g", "Fat": "8g"}',
+            "item_price": 3.50,
+            "item_stock": 10,
+            "item_type": "Dairy",
+            "item_image": "milk_image_url"
+        },
+        {
+            "item_name": "Bread",
+            "item_description": "Whole wheat bread",
+            "item_nutrition": '{"Calories": "110", "Protein": "4g", "Carbohydrates": "20g", "Fat": "2g"}',
+            "item_price": 2.00,
+            "item_stock": 25,
+            "item_type": "Grain",
+            "item_image": "bread_image_url"
+        },
+        {
+            "item_name": "Eggs",
+            "item_description": "1 dozen eggs",
+            "item_nutrition": '{"Calories": "70", "Protein": "6g", "Carbohydrates": "1g", "Fat": "5g"}',
+            "item_price": 1.99,
+            "item_stock": 30,
+            "item_type": "Protein",
+            "item_image": "eggs_image_url"
+        }
+    ]
+
+    # Insert each example item into the items table and associate it with the list
+    for item in example_items:
+        try:
+            cursor.execute(
+                """
+                INSERT INTO items (item_name, item_description, item_nutrition, item_price, item_stock, item_type, item_image, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item['item_name'],
+                    item['item_description'],
+                    item['item_nutrition'],
+                    item['item_price'],
+                    item['item_stock'],
+                    item['item_type'],
+                    item['item_image'],
+                    user_id
+                )
+            )
+
+            # Get the last inserted item's ID
+            item_id = cursor.lastrowid
+
+            # Insert into list_item_lines to associate the item with the list
+            cursor.execute(
+                """
+                INSERT INTO list_item_lines (list_item_line_id, list_id, item_id, list_item_quantity)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    str(uuid.uuid4()),  # Unique list_item_line_id
+                    list_id,
+                    item_id,
+                    1  # Quantity of the item in the list
+                )
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(status_code=400, detail=f"Failed to add {item['item_name']} to the list")
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "Example list and items populated successfully", "list_id": list_id}
+
+
+
+# Create a new list
+@app.post("/lists", status_code=201)
+def create_list(list_data: ListCreate):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    list_id = str(uuid.uuid4())  # Generate a unique ID for the list
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO lists (list_id, list_name, list_image, user_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                list_id,
+                list_data.list_name,
+                list_data.list_image,
+                list_data.user_id
+            )
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Failed to create the list")
+    finally:
+        conn.close()
+
+    return {"message": "List created successfully", "list_id": list_id}
+
+# Get all lists
+@app.get("/lists")
+def get_lists_by_user(current_user: User = Depends(get_current_user)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM lists")
+    lists = cursor.fetchall()
+    conn.close()
+
+    if not lists:
+        raise HTTPException(status_code=404, detail="No lists found")
+
+    return {"lists": [dict(list_row) for list_row in lists]}
+
+
+# Get all lists by a user ID
+@app.get("/lists/user/{user_id}")
+def get_lists_by_user(user_id: str, current_user: User = Depends(get_current_user)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM lists WHERE user_id = ?", (user_id,))
+    lists = cursor.fetchall()
+    conn.close()
+
+    if not lists:
+        raise HTTPException(status_code=404, detail="No lists found for the user")
+
+# return {"items": [dict(item) for item in items]}
+    return {"lists": [dict(list_row) for list_row in lists]}
+
+
+# Get a specific list by ID with its items
+@app.get("/lists/{list_id}")
+def get_list_by_id(list_id: str, current_user: User = Depends(get_current_user)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Fetch the list details
+    cursor.execute("SELECT * FROM lists WHERE list_id = ?", (list_id,))
+    list_data = cursor.fetchone()
+
+    if list_data is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="List not found")
+
+    # Fetch all items associated with the list from list_item_lines and items
+    cursor.execute('''
+        SELECT items.* FROM items
+        INNER JOIN list_item_lines ON items.item_id = list_item_lines.item_id
+        WHERE list_item_lines.list_id = ?
+    ''', (list_id,))
+    items_data = cursor.fetchall()
+    conn.close()
+
+    # Convert list_data to a dictionary
+    list_dict = dict(list_data)
+
+    # Convert items_data to a list of dictionaries
+    items_list = [dict(item) for item in items_data]
+
+    # Add the items to the list dictionary
+    list_dict['items'] = items_list
+
+    return list_dict
+
+
+
+# Update an existing list
+@app.put("/lists/{list_id}")
+def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depends(get_current_user)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Get the existing list
+    cursor.execute("SELECT * FROM lists WHERE list_id = ?", (list_id,))
+    existing_list = cursor.fetchone()
+
+    if existing_list is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="List not found")
+
+    # Prepare update values
+    update_data = {key: value for key, value in list_data.dict().items() if value is not None}
+    update_fields = ', '.join([f"{key} = ?" for key in update_data.keys()])
+    update_values = list(update_data.values())
+    update_values.append(list_id)
+
+    cursor.execute(f"UPDATE lists SET {update_fields} WHERE list_id = ?", update_values)
+    conn.commit()
+    conn.close()
+
+    return {"message": "List updated successfully"}
+
+
+# Delete a list by ID
+@app.delete("/lists/{list_id}", status_code=204)
+def delete_list(list_id: str, current_user: User = Depends(get_current_user)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM lists WHERE list_id = ?", (list_id,))
+    list_data = cursor.fetchone()
+
+    if list_data is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="List not found")
+
+    cursor.execute("DELETE FROM lists WHERE list_id = ?", (list_id,))
+    conn.commit()
+    conn.close()
+
+    return {"message": "List deleted successfully"}
+
 
 # Endpoint to get all users
 @app.get("/users", response_model=list[dict])

@@ -96,6 +96,8 @@ const Pantry: React.FC = ({
     setToken(storedToken);
     setUserId(storedUserId);
 
+    console.log("Stored user ID:", storedUserId);
+
     if (storedToken && storedUserId) {
       try {
         const response = await axios.get(`${API_URLS.GET_ITEMS_BY_USER}/${storedUserId}`, {
@@ -306,6 +308,7 @@ const Pantry: React.FC = ({
           onAdd={handleItemAdded}
           token={token}
           userId={userId}
+          setBarcodeScanning={()=>null}
         />
 
         <FloatingAction
