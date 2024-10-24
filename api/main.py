@@ -97,11 +97,14 @@ class ListCreate(BaseModel):
     list_name: str
     list_image: Optional[str] = None
     user_id: str
+    # items should be a list of dicts with item_id and quantity
+    items: Optional[list[dict[str, int]]] = None
 
 class ListUpdate(BaseModel):
     list_name: Optional[str]
     list_image: Optional[str]
     user_id: Optional[str]
+    items: Optional[list[dict[str, int]]] = None
     
 def init_db():
     """Initialize the SQLite database and create a users table if it doesn't exist."""
@@ -748,8 +751,6 @@ def populate_example_list(user_id: str):
 
     return {"message": "Example list and items populated successfully", "list_id": list_id}
 
-
-
 # Create a new list
 @app.post("/lists", status_code=201)
 def create_list(list_data: ListCreate):
@@ -759,6 +760,7 @@ def create_list(list_data: ListCreate):
     list_id = str(uuid.uuid4())  # Generate a unique ID for the list
 
     try:
+        # Insert the list into the lists table
         cursor.execute(
             """
             INSERT INTO lists (list_id, list_name, list_image, user_id)
@@ -771,13 +773,40 @@ def create_list(list_data: ListCreate):
                 list_data.user_id
             )
         )
+
+        # Insert each item and its quantity into the list_item_lines table
+        if list_data.items:
+            for item in list_data.items:
+                item_id = item.get('item_id')
+                quantity = item.get('quantity', 1)  # Default quantity is 1 if not provided
+                
+                try:
+                    cursor.execute(
+                        """
+                        INSERT INTO list_item_lines (list_item_line_id, list_id, item_id, list_item_quantity)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (
+                            str(uuid.uuid4()),  # Unique list_item_line_id
+                            list_id,
+                            item_id,
+                            quantity  # Use the provided quantity for the item
+                        )
+                    )
+                except sqlite3.IntegrityError:
+                    raise HTTPException(status_code=400, detail=f"Failed to add item {item_id} to the list")
+
+        # Commit the transaction once after all inserts
         conn.commit()
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Failed to create the list")
+
+    except sqlite3.IntegrityError as e:
+        raise HTTPException(status_code=400, detail=f"Failed to create the list: {str(e)}")
+
     finally:
         conn.close()
 
-    return {"message": "List created successfully", "list_id": list_id}
+    return {"message": "List created successfully", "list_id": list_id, "items": list_data.items}
+
 
 # Get all lists
 @app.get("/lists")
@@ -804,13 +833,13 @@ def get_lists_by_user(user_id: str, current_user: User = Depends(get_current_use
     conn.close()
 
     if not lists:
-        raise HTTPException(status_code=404, detail="No lists found for the user")
+        return {"message": "No lists found for the user"}
 
 # return {"items": [dict(item) for item in items]}
     return {"lists": [dict(list_row) for list_row in lists]}
 
 
-# Get a specific list by ID with its items
+# Get a specific list by ID with its items and their amounts
 @app.get("/lists/{list_id}")
 def get_list_by_id(list_id: str, current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
@@ -824,9 +853,10 @@ def get_list_by_id(list_id: str, current_user: User = Depends(get_current_user))
         conn.close()
         raise HTTPException(status_code=404, detail="List not found")
 
-    # Fetch all items associated with the list from list_item_lines and items
+    # Fetch all items associated with the list from list_item_lines and items, including the quantity
     cursor.execute('''
-        SELECT items.* FROM items
+        SELECT items.*, list_item_lines.list_item_quantity as amount
+        FROM items
         INNER JOIN list_item_lines ON items.item_id = list_item_lines.item_id
         WHERE list_item_lines.list_id = ?
     ''', (list_id,))
@@ -836,17 +866,41 @@ def get_list_by_id(list_id: str, current_user: User = Depends(get_current_user))
     # Convert list_data to a dictionary
     list_dict = dict(list_data)
 
-    # Convert items_data to a list of dictionaries
-    items_list = [dict(item) for item in items_data]
+    # Convert items_data to a list of dictionaries, including the amount field
+    items_list = []
+    for item in items_data:
+        item_dict = dict(item)
+        item_dict['amount'] = item['amount']  # Add the amount field from list_item_lines
+        items_list.append(item_dict)
 
     # Add the items to the list dictionary
     list_dict['items'] = items_list
 
     return list_dict
 
+# Read list_item_lines by list ID
+@app.get("/list-item-lines/{list_id}")
+def read_list_item_lines(list_id: str, current_user: User = Depends(get_current_user)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT list_item_lines.*, items.item_name, items.item_description
+        FROM list_item_lines
+        INNER JOIN items ON list_item_lines.item_id = items.item_id
+        WHERE list_item_lines.list_id = ?
+    ''', (list_id,))
+    list_item_lines = cursor.fetchall()
+    conn.close()
+
+    if not list_item_lines:
+        raise HTTPException(status_code=404, detail="No list item lines found")
+
+    return {"list_item_lines": [dict(line) for line in list_item_lines]}
 
 
-# Update an existing list
+
+# Update an existing list, including updating or adding items in list_item_lines
 @app.put("/lists/{list_id}")
 def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
@@ -860,17 +914,59 @@ def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depend
         conn.close()
         raise HTTPException(status_code=404, detail="List not found")
 
-    # Prepare update values
-    update_data = {key: value for key, value in list_data.dict().items() if value is not None}
-    update_fields = ', '.join([f"{key} = ?" for key in update_data.keys()])
-    update_values = list(update_data.values())
-    update_values.append(list_id)
+    # Begin transaction
+    try:
+        # Step 1: Update the fields in the lists table
+        update_data = {key: value for key, value in list_data.dict(exclude_unset=True).items() if key != "items"}
+        if update_data:
+            update_fields = ', '.join([f"{key} = ?" for key in update_data.keys()])
+            update_values = list(update_data.values()) + [list_id]
+            cursor.execute(f"UPDATE lists SET {update_fields} WHERE list_id = ?", update_values)
 
-    cursor.execute(f"UPDATE lists SET {update_fields} WHERE list_id = ?", update_values)
-    conn.commit()
-    conn.close()
+        # Step 2: Update the items in list_item_lines
+        if list_data.items is not None:
+            for item in list_data.items:
+                item_id, quantity = list(item.items())[0]  # Assuming each item is a dict {item_id: quantity}
+
+                # Check if the item already exists in the list
+                cursor.execute(
+                    "SELECT * FROM list_item_lines WHERE list_id = ? AND item_id = ?",
+                    (list_id, item_id)
+                )
+                existing_item = cursor.fetchone()
+
+                if existing_item:
+                    # If the item exists, update its quantity
+                    cursor.execute(
+                        """
+                        UPDATE list_item_lines
+                        SET list_item_quantity = ?
+                        WHERE list_id = ? AND item_id = ?
+                        """,
+                        (quantity, list_id, item_id)
+                    )
+                else:
+                    # If the item doesn't exist, insert it
+                    cursor.execute(
+                        """
+                        INSERT INTO list_item_lines (list_item_line_id, list_id, item_id, list_item_quantity)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (str(uuid.uuid4()), list_id, item_id, quantity)
+                    )
+
+        # Commit the transaction
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to update the list: {str(e)}")
+
+    finally:
+        conn.close()
 
     return {"message": "List updated successfully"}
+
 
 
 # Delete a list by ID

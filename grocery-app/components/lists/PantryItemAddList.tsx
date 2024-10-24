@@ -1,33 +1,18 @@
 import React, { useState } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, OverflowMenu, MenuItem } from '@ui-kitten/components';
-import Icon from 'react-native-vector-icons/Ionicons';
-
-export type Item = {
-    item_id: string;
-    item_name: string;
-    item_description: string;
-    item_nutrition: string;
-    item_price: number;
-    item_stock: number;
-    item_type: string;
-    item_image: string;
-    user_id: string;
-    item_amount: number;
-};
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ListItem } from './ListDetailsModal';
 
 type PantryItemProps = {
-    item: {
-        item_id: string;
-        item_name: string;
-        item_stock: number;
-        item_image?: string;
-    };
-    onEdit: (item: any) => void;
+    item: ListItem;
+    onAdd: ((item: any) => void) | null;
     onDelete: (item: any) => void;
+    inList: boolean;
+    editable: boolean;
 };
 
-const PantryItem: React.FC<PantryItemProps> = ({ item, onEdit, onDelete }) => {
+const PantryItemAddList: React.FC<PantryItemProps> = ({ item, onAdd, onDelete, inList, editable }) => {
     const [menuVisible, setMenuVisible] = useState(false);
 
     return (
@@ -50,23 +35,22 @@ const PantryItem: React.FC<PantryItemProps> = ({ item, onEdit, onDelete }) => {
                     {item.item_name}
                 </Text>
                 <Text category="p2" appearance="hint">
-                    {item.item_stock} in stock
+                    {item.amount > 0 ? item.amount + " in list | " : ""}{item.item_stock} in stock
                 </Text>
             </View>
 
-            {/* Right: Vertical Ellipsis Icon */}
-            <OverflowMenu
-                anchor={() => (
-                    <TouchableOpacity onPress={() => setMenuVisible(true)}>
-                        <Icon name="ellipsis-vertical" size={24} color="black" />
-                    </TouchableOpacity>
-                )}
-                visible={menuVisible}
-                onBackdropPress={() => setMenuVisible(false)}
-            >
-                <MenuItem title="Edit" onPress={() => { setMenuVisible(false); onEdit(item); }} />
-                <MenuItem title="Delete" onPress={() => { setMenuVisible(false); onDelete(item); }} />
-            </OverflowMenu>
+            {/* Right: horizontal container with Icons for adding and deleting */}
+            {
+                onAdd != null && editable ?
+                <TouchableOpacity onPress={inList ? onDelete : onAdd}>
+                    <Icon name={inList ? "playlist-remove" : "playlist-plus"} size={24} color={inList ? "red" : "black"} />
+                </TouchableOpacity>
+                : editable &&
+                <TouchableOpacity onPress={onDelete}>
+                    <Icon name={"playlist-remove"} size={24} color={"red"} />
+                </TouchableOpacity>
+            }
+
         </View>
     );
 };
@@ -95,4 +79,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PantryItem;
+export default PantryItemAddList;

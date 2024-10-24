@@ -96,7 +96,8 @@ const Pantry: React.FC = ({
     setToken(storedToken);
     setUserId(storedUserId);
 
-    console.log("Stored user ID:", storedUserId);
+    console.log("Stored user data:", storedUserId);
+
 
     if (storedToken && storedUserId) {
       try {
@@ -106,7 +107,7 @@ const Pantry: React.FC = ({
           },
         });
         setItems(response.data.items);
-        console.log("Items:", response.data.items);
+        // console.log("Items:", response.data.items);
       } catch (error) {
         console.error("Error fetching items:", error);
       }
@@ -244,7 +245,7 @@ const Pantry: React.FC = ({
           placeholder="Search items..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          accessoryLeft={(props) => <Icon {...props} name="search-outline" />}
+          accessoryLeft={(props) => <Icon size={24} {...props} name="search-outline" />}
           style={styles.searchBar}
         />
 
@@ -275,7 +276,7 @@ const Pantry: React.FC = ({
             </TouchableOpacity>
           )}
           contentContainerStyle={items.length === 0 ? styles.noItemsContainer : undefined}
-          ListEmptyComponent={<Text category="p1" style={styles.noItemsText}>{loading ? "Loading..." : "You have no items, try adding some."}</Text>}
+          ListEmptyComponent={<Text category="p1" style={styles.noItemsText}>{loading ? "Loading..." : "No items found."}</Text>}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -308,7 +309,7 @@ const Pantry: React.FC = ({
           onAdd={handleItemAdded}
           token={token}
           userId={userId}
-          setBarcodeScanning={()=>null}
+          setBarcodeScanning={() => null}
         />
 
         <FloatingAction

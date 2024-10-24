@@ -25,8 +25,10 @@ describe('AddItemModal', () => {
                 onClose={mockOnClose}
                 onAdd={mockOnAdd}
                 token={mockToken}
-                userId={mockUserId}
-            />
+                userId={mockUserId} 
+                setBarcodeScanning={function (flag: boolean): void {
+                    throw new Error('Function not implemented.');
+                } }            />
         );
     };
 

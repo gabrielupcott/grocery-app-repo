@@ -14,7 +14,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({ visib
         <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
             <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.title}>Delete "{itemName ? itemName : "item"}"" item?</Text>
+                    <Text style={styles.title}>Delete "{itemName ? itemName : "item"}"?</Text>
                     <Text style={styles.subtitle}>This can't be undone</Text>
                     <View style={styles.actionButtons}>
                         <Button style={styles.cancelButton} appearance="outline" onPress={onClose}>

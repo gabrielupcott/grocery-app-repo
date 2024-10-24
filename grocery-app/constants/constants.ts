@@ -15,6 +15,8 @@ export const API_URLS = {
   GET_USERID_BY_EMAIL: `${BASE_URL}/user-id`,
   GET_LISTS_BY_USER: `${BASE_URL}/lists/user`,
   GET_LIST_BY_ID: `${BASE_URL}/lists`,
+  DELETE_LIST_BY_ID: `${BASE_URL}/lists`,
+  UPDATE_LIST_BY_ID: `${BASE_URL}/lists`,
   ADD_LIST: `${BASE_URL}/lists`,
   ADD_ITEM: `${BASE_URL}/items`,
   PRODUCT_INFO: `${BASE_URL}/product-info`,

@@ -11,7 +11,9 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ],
     "transform": {
       "^.+\\.[jt]sx?$": "babel-jest"
     },
@@ -55,7 +57,10 @@
     "react-native-web": "~0.19.10",
     "yup": "^1.4.0",
     "expo-image-picker": "~15.0.7",
-    "expo-camera": "~15.0.16"
+    "expo-camera": "~15.0.16",
+    "expo-calendar": "~13.0.5",
+    "@react-native-community/datetimepicker": "8.0.1",
+    "expo-localization": "~15.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
