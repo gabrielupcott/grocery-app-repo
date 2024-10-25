@@ -219,7 +219,7 @@ const Pantry: React.FC = ({
 
   if (barcodeScanning)
     return (
-      <BarcodeScannerScreen onClose={() => setBarcodeScanning(false)} />
+      <BarcodeScannerScreen onClose={() => {setBarcodeScanning(false);onRefresh()}} />
     )
 
   return (

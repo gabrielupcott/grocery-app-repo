@@ -133,9 +133,9 @@ const AddItemModal: React.FC<AddItemModalProps & { initialValues?: any, setBarco
 
     // Effect to check if form is valid
     useEffect(() => {
-        const isValid = title.trim() !== '' && description.trim() !== '' && price.trim() !== '';
+        const isValid = title.trim() !== '' && description.trim() !== '' && price.trim() !== '' && quantity > 0;
         setIsFormValid(isValid);
-    }, [title, description, price]);
+    }, [title, description, price, quantity]);
 
     return (
         <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
