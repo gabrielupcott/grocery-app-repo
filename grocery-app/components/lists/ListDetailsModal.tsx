@@ -74,10 +74,13 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
   };
 
   const handleItemAmountChange = (item: ListItem, newAmount: number) => {
+    console.log('New amount:', newAmount);
     if (Number.isNaN(newAmount)) return;
     const updatedList = newList.map((i) =>
       i.item_id === item.item_id ? { ...i, amount: newAmount } : i
     );
+    const oldSelected = selectedItem;
+    selectedItem && setSelectedItem({ ...selectedItem, amount: newAmount });
     setNewList(updatedList);
   };
 
@@ -109,6 +112,11 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
     setNewList(updatedItems);  // Update the list after shopping
     setShopModalVisible(false);  // Close the shopping modal
     onClose();  // Close the list details modal
+  };
+
+  const handleItemRemove = (item: ListItem) => {
+    const updatedList = newList.filter((i) => i.item_id !== item.item_id);
+    setNewList(updatedList);
   };
 
   const handleSaveList = async () => {
@@ -152,7 +160,7 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
                 editable={editMode}
                 item={item}
                 onAdd={null}
-                onDelete={() => { }}  // Handle item remove if needed
+                onDelete={() => handleItemRemove(item)}  // Handle item remove if needed
                 inList={items.includes(item)}
               />
             </TouchableOpacity>

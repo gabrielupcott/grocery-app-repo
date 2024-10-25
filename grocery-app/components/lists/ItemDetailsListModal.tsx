@@ -13,6 +13,7 @@ type ItemDetailsModalProps = {
     onClose: () => void;
     onItemAmountChange: (item: ListItem, amount: number) => void;
     editable?: boolean;
+    amount?: number;
 };
 
 const ItemDetailsListModal: React.FC<ItemDetailsModalProps> = ({ visible, item, onClose, onItemAmountChange, editable }) => {

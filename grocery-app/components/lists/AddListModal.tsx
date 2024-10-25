@@ -35,11 +35,11 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
     const [modalVisible, setModalVisible] = useState<boolean>(false); // View/Edit Modal visibility
     const [stockFilter, setStockFilter] = useState<'InStock' | 'AllOut'>('InStock'); // Track the stock filter
     // state for new list which is dict of item_id and number representing the qty of that item in the new list
-    const [newListItems, setNewListItems] = useState<{ item_id: string, item_amount: number }[]>([]);
+    // const [newListItems, setNewListItems] = useState<{ item_id: string, amount: number }[]>([]);
+    const [newListItems, setNewListItems] = useState<ListItem[]>([]);
     const [isListValid, setIsListValid] = useState<boolean>(false); // Track if the list is valid
     const [saveModalVisible, setSaveModalVisible] = useState<boolean>(false); // Save confirmation modal
     const [name, setName] = useState<string>("");
-    const [itemAmounts, setItemAmounts] = useState<{ [key: string]: number }>({}); // Track the amount of each item
 
     // Fetch items when the modal is opened
     useEffect(() => {
@@ -58,7 +58,7 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
             // Prepare the list of item IDs with their quantities
             const itemArray = newListItems.map((item) => ({
                 item_id: item.item_id,
-                quantity: itemAmounts[item.item_id],
+                quantity: item.amount
             }));
 
             console.log("Item Array:", itemArray);  
@@ -104,7 +104,11 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
                     Authorization: `Bearer ${token}`,
                 },
             });
-            setItems(response.data.items);
+            let items = response.data.items;
+            // add amount property to each item
+            items = items.map((item: ListItem) => ({ ...item, amount: 0 }));
+
+            setItems(items);
             // console.log("Items:", response.data.items);
         } catch (error) {
             console.error("Error fetching items:", error);
@@ -132,52 +136,60 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
         console.log("Found Item:", foundItem);
 
         if (foundItem) {
-            foundItem.item_amount += 1; // Increment the amount if the item already exists
-        } else {
-            console.log("Item:", item);
-            console.log("id: " + item.item_id);
-            const newItem = { item_id: String(item["item_id"]), item_amount: 1 };
-            console.log("New Item:", newItem);
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].item_id === item.item_id) {
-                    updatedItems.push({ item_id: items[i].item_id, item_amount: 1 });
+            foundItem.amount += 1; // Increment the amount if the item already exists
+            updatedItems = updatedItems.map((newItem) => {
+                if (newItem.item_id === item.item_id) {
+                    return { ...newItem, amount: newItem.amount + 1 };
                 }
+                return newItem;
             }
+            );
+            let oldSelected = selectedItem;
+            oldSelected = { ...item, amount: foundItem.amount };
+            console.log("Old Selected:", oldSelected);
+            setSelectedItem(oldSelected);
+            console.log("Item found in list, updating amount");
+        } else {
+            console.log("Item not found in list, adding it");
+            // Add the item to the list if it doesn't exist
+            updatedItems = [...updatedItems, { ...item, amount: 1 }];
+            let oldSelected = selectedItem;
+            oldSelected = { ...item, amount: 1 };
+            console.log("Old Selected:", oldSelected);
+            setSelectedItem(oldSelected);
             // updatedItems = [...updatedItems, newItem]; // Add new item to the filtered array
         }
+
         console.log("Updated Items:", updatedItems);
         setNewListItems(updatedItems);
 
-        // update itemAmounts
-        const updatedItemAmounts = { ...itemAmounts };
-        updatedItemAmounts[item.item_id] = (updatedItemAmounts[item.item_id] || 0) + 1;
-        setItemAmounts(updatedItemAmounts);
     };
 
-
-
-    const handleItemAmountChange = (item: ListItem, amount: number) => {
+    const handleItemAmountChange = (item: ListItem, new_amount: number) => {
+        console.log('New amount:', new_amount);
         // If the amount is 0, remove the item from the list
-        if (amount === 0) {
+        if (new_amount === 0) {
             handleRemoveFromList(item);
+            setSelectedItem({ ...item, amount: 0 });
             return;
         }
+        setSelectedItem({ ...item, amount: new_amount });
+
         // if item not in list, add it
         if (!newListItems.find((newItem) => newItem.item_id === item.item_id)) {
+            console.log("Item not in list, adding it");
             handleItemAdd(item);
             return;
         }
+        console.log("Item found in list, updating amount");
         const updatedItems = newListItems.map((newItem) => {
             if (newItem.item_id === item.item_id) {
-                return { ...newItem, item_stock: amount };
+                return { ...newItem, amount: new_amount };
             }
             return newItem;
         });
+        console.log("Updated Items:", updatedItems);
         setNewListItems(updatedItems);
-        // update itemAmounts
-        const updatedItemAmounts = { ...itemAmounts };
-        updatedItemAmounts[item.item_id] = amount;
-        setItemAmounts(updatedItemAmounts);
     }
 
     const handleRemoveFromList = (item: ListItem) => {
@@ -186,9 +198,7 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
         const updatedItems = newListItems.filter((newItem) => newItem.item_id !== item.item_id);
         setNewListItems(updatedItems);
         // update itemAmounts
-        const updatedItemAmounts = { ...itemAmounts };
-        delete updatedItemAmounts[item.item_id];
-        setItemAmounts(updatedItemAmounts);
+
         setActiveItemId(null);
         onRefresh(); // Refresh the data
     };
@@ -202,7 +212,12 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
     };
 
     const handleItemPress = (item: ListItem) => {
-        setSelectedItem(item);
+        if (newListItems.find((newItem) => newItem.item_id === item.item_id)) {
+
+            setSelectedItem(newListItems.find((newItem) => newItem.item_id === item.item_id));
+        } else {
+            setSelectedItem(item);
+        }
         setModalVisible(true); // Show modal
     };
 
@@ -211,32 +226,12 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
         handleAddNewList();
     };
 
-    // const amountOfItemInList = (item: Item) => {
-    //     // // Find the item in the new list items
-    //     // console.log("Item:", item);
-    //     if (!item || !item.item_id) {
-    //         console.error('Invalid item:', item);
-    //         return 0; // Prevent further execution if item is invalid
-    //     }
-
-    //     for (let i = 0; i < newListItems.length; i++) {
-    //         if (newListItems[i].item_id === item.item_id) {
-    //             return newListItems[i].item_amount;
-    //         }
-    //     }
-    //     return 0;
-    //     // const foundItemQuantity = newListItems.find((newItem) => newItem.item_id === item.item_id);
-    //     // // Since new list items is a dict of item_id and item_stock, we need to return the item_stock
-    //     // return foundItemQuantity ? foundItemQuantity.item_amount : 0;
-
-    // }
-
     return (
         <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
             <SafeAreaView style={styles.container}>
                 <View style={styles.headerContainer}>
                     <Text category="h4" style={styles.headerText}>
-                        Add Items to new List
+                        Add Items to Your New List
                     </Text>
                 </View>
 
@@ -249,7 +244,6 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
                     style={styles.searchBar}
                 />
 
-                {/* Item Details Modal */}
                 <FlatList
                     data={filterItems()}
                     // keyExtractor={(item) => item.item_id.toString()}
@@ -260,12 +254,12 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
 
                                 <PantryItemAddList
                                     editable={true}
-                                    item={item}
+                                    item={newListItems.find((newItem) => newItem.item_id === item.item_id) || item}
                                     onAdd={() => handleItemAdd(item)}
                                     onDelete={() => handleRemoveFromList(item)} // Trigger delete 
                                     // inList={false}
                                     // amount={0}
-                                    inList={itemAmounts[item.item_id] > 0}
+                                    inList={newListItems.find((newItem) => newItem.item_id === item.item_id) ? true : false}
                                 />
                             </TouchableOpacity>
                         ) : null
@@ -280,11 +274,12 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
                         />
                     }
                 />
+
+                {/* Item Details Modal */}
                 <ItemDetailsListModal
                     visible={modalVisible}
                     item={selectedItem}
                     onClose={() => setModalVisible(false)}
-                    // amount={0}
                     editable={true}
                     onItemAmountChange={handleItemAmountChange}
                 />

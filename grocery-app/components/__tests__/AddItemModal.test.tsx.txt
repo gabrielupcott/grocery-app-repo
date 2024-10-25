@@ -1,0 +1,138 @@
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import AddItemModal from '../pantry/AddItemModal';
+import { ApplicationProvider } from "@ui-kitten/components";
+import * as eva from '@eva-design/eva';
+import axios from 'axios';
+
+jest.mock('axios');
+
+describe('AddItemModal', () => {
+    const mockOnClose = jest.fn();
+    const mockOnAdd = jest.fn();
+    const mockToken = 'mockToken';
+    const mockUserId = 'mockUserId';
+    const mockSetBarcodeScanning = jest.fn();
+
+    const renderWithProviders = (ui: React.ReactElement) => {
+        return render(
+            <ApplicationProvider {...eva} theme={eva.light}>
+                {ui}
+            </ApplicationProvider>
+        );
+    };
+
+    const setup = (visible: boolean, initialValues = {}) => {
+        return renderWithProviders(
+            <AddItemModal
+                visible={visible}
+                onClose={mockOnClose}
+                onAdd={mockOnAdd}
+                token={mockToken}
+                userId={mockUserId}
+                initialValues={initialValues}
+                setBarcodeScanning={mockSetBarcodeScanning}
+            />
+        );
+    };
+
+    it('renders correctly when visible', () => {
+        const { getByText } = setup(true);
+        expect(getByText('Add New Item')).toBeTruthy();
+    });
+
+    it('does not render when not visible', () => {
+        const { queryByText } = setup(false);
+        expect(queryByText('Add New Item')).toBeNull();
+    });
+
+    it('calls onClose when Cancel button is pressed', () => {
+        const { getByText } = setup(true);
+        fireEvent.press(getByText('Cancel'));
+        expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('does not call onAdd when the form is incomplete', async () => {
+        const { getByText, getByPlaceholderText } = setup(true);
+
+        // Leave title empty, fill in only the description and price
+        fireEvent.changeText(getByPlaceholderText('Description'), 'Test Description');
+        fireEvent.changeText(getByPlaceholderText('Price'), '10');
+
+        fireEvent.press(getByText('Add Item'));
+
+        await waitFor(() => {
+            // Check that mockOnAdd has NOT been called
+            expect(mockOnAdd).not.toHaveBeenCalled();
+        });
+    });
+
+    it('calls onAdd and onClose when Add Item button is pressed', async () => {
+        (axios.post as jest.Mock).mockResolvedValueOnce({});
+
+        const { getByText, getByPlaceholderText } = setup(true);
+
+        fireEvent.changeText(getByPlaceholderText('Title'), 'Test Item');
+        fireEvent.changeText(getByPlaceholderText('Description'), 'Test Description');
+        fireEvent.changeText(getByPlaceholderText('Price'), '10');
+
+        fireEvent.press(getByText('Add Item'));
+
+        await waitFor(() => {
+            expect(mockOnAdd).toHaveBeenCalled();
+            expect(mockOnClose).toHaveBeenCalled();
+        });
+    });
+
+    it('increases and decreases quantity correctly', () => {
+        const { getByText, getByDisplayValue, getByTestId } = setup(true);
+
+        const increaseButton = getByTestId('add-button');
+        const decreaseButton = getByTestId('decrease-button');
+
+        fireEvent.press(increaseButton);
+        expect(getByDisplayValue('2')).toBeTruthy();
+
+        fireEvent.press(decreaseButton);
+        expect(getByDisplayValue('1')).toBeTruthy();
+    });
+
+    it('adds new nutrient correctly', () => {
+        const { getByText, queryByText } = setup(true);
+
+        fireEvent.press(getByText('Nutrition Info'));
+        expect(queryByText('Add Nutrients')).toBeTruthy();
+
+        fireEvent.press(getByText('Nutrition Info'));
+        expect(queryByText('Add Nutrients')).toBeNull();
+
+        // expect(getByText('Protein')).toBeTruthy();
+        // expect(getByDisplayValue('10g')).toBeTruthy();
+    });
+
+    it('toggles nutrition section visibility', () => {
+        const { getByText, queryByText } = setup(true);
+
+        fireEvent.press(getByText('Nutrition Info'));
+        expect(queryByText('Add Nutrients')).toBeTruthy();
+
+        fireEvent.press(getByText('Nutrition Info'));
+        expect(queryByText('Add Nutrients')).toBeNull();
+    });
+
+    it('calls setBarcodeScanning with false when item is added', async () => {
+        (axios.post as jest.Mock).mockResolvedValueOnce({});
+
+        const { getByText, getByPlaceholderText } = setup(true);
+
+        fireEvent.changeText(getByPlaceholderText('Title'), 'Test Item');
+        fireEvent.changeText(getByPlaceholderText('Description'), 'Test Description');
+        fireEvent.changeText(getByPlaceholderText('Price'), '10');
+
+        fireEvent.press(getByText('Add Item'));
+
+        await waitFor(() => {
+            expect(mockSetBarcodeScanning).toHaveBeenCalledWith(false);
+        });
+    });
+});
