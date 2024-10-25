@@ -137,6 +137,7 @@ def init_db():
         list_name VARCHAR NOT NULL,
         list_image VARCHAR,
         user_id VARCHAR NOT NULL,
+        last_shopped DATETIME,
         FOREIGN KEY (user_id) REFERENCES users(user_id)
     )''')
 
@@ -1000,6 +1001,60 @@ def delete_list(list_id: str, current_user: User = Depends(get_current_user)):
     conn.close()
 
     return {"message": "List deleted successfully"}
+
+from datetime import datetime
+
+@app.put("/lists/{list_id}/shop")
+def shop_list(list_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Update the last_shopped date for the specified list to the current date and time.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if the list exists
+    cursor.execute("SELECT * FROM lists WHERE list_id = ?", (list_id,))
+    list_data = cursor.fetchone()
+    if list_data is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="List not found")
+
+    # Update the last_shopped date to the current datetime
+    last_shopped_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        cursor.execute(
+            "UPDATE lists SET last_shopped = ? WHERE list_id = ?",
+            (last_shopped_date, list_id)
+        )
+        conn.commit()
+    except sqlite3.Error as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to update last_shopped date: {str(e)}")
+    finally:
+        conn.close()
+
+    return {"message": "List shopped successfully", "last_shopped": last_shopped_date}
+
+
+@app.put("/alter-lists-table")
+def alter_lists_table():
+    """Alter the lists table to add the last_shopped column if it does not exist."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Execute the ALTER TABLE command to add the last_shopped column
+        cursor.execute("ALTER TABLE lists ADD COLUMN last_shopped DATETIME")
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        # If the column already exists, catch the error and provide feedback
+        if "duplicate column name" in str(e):
+            return {"message": "Column 'last_shopped' already exists in the 'lists' table."}
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to alter table: {str(e)}")
+    finally:
+        conn.close()
+    
+    return {"message": "Column 'last_shopped' added to the 'lists' table successfully."}
 
 
 # Endpoint to get all users

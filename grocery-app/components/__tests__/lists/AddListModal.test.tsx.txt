@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import AddListModal from '../lists/AddListModal';
+import AddListModal from '../../lists/AddListModal';
 import axios from 'axios';
 import { ApplicationProvider } from "@ui-kitten/components";
 import * as eva from '@eva-design/eva';
-import { ListItem } from '../lists/ListDetailsModal';
+import { ListItem } from '../../lists/ListDetailsModal';
 
 jest.mock('axios');
 

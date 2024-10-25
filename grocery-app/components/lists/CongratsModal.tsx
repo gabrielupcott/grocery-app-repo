@@ -16,7 +16,7 @@ const CongratsModal: React.FC<CongratsModalProps> = ({ visible, purchasedItems, 
 
   return (
     <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+      <View style={styles.modalContainer} testID='congrats-modal'>
         <Text category="h4" style={styles.headerText}>
           Congrats!
         </Text>

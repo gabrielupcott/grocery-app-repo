@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import AddItemModal from '../pantry/AddItemModal';
+import AddItemModal from '../../pantry/AddItemModal';
 import { ApplicationProvider } from "@ui-kitten/components";
 import * as eva from '@eva-design/eva';
 import axios from 'axios';

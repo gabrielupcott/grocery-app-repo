@@ -18,6 +18,7 @@ type ListType = {
   list_name: string;
   first_item_image?: string | null; // Image of the first item in the list
   item_count: number;
+  last_shopped?: string; // Last shopped date
 };
 
 const actions = [
@@ -44,7 +45,7 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route })
   const [listModalVisible, setListModalVisible] = useState<boolean>(false);
   const [listItemCounts, setListItemCounts] = useState<{ [key: string]: number }>({});
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
-  const [sortOption, setSortOption] = useState<string>(''); // No default sort option initially
+  const [sortOption, setSortOption] = useState<string>('date'); // Set the default sort option to date
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [addListModalVisible, setAddListModalVisible] = useState(false);
 
@@ -107,7 +108,7 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route })
           };
         })
       );
-
+      console.log("List with item count:", listsWithItemCount[0]);
       setLists(listsWithItemCount);
       setLoading(false);
     } catch (error) {
@@ -124,16 +125,27 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route })
   };
 
   const sortLists = (lists: ListType[]) => {
-    if (sortOption === 'asc') {
-      return lists.sort((a, b) => listItemCounts[a.list_id] - listItemCounts[b.list_id]);
-    } else if (sortOption === 'desc') {
-      return lists.sort((a, b) => listItemCounts[b.list_id] - listItemCounts[a.list_id]);
-    }
+    // sort lists based on list.last_shopped (datetime)
+    if (sortOption === 'date') {
+      return lists.sort((a, b) => {
+        console.log("Sorting by date:", a.last_shopped, b.last_shopped);
+        // Assuming the API provides the last_shopped field
+        return new Date(b.last_shopped ?? 0).getTime() - new Date(a.last_shopped ?? 0).getTime();
+      });
+      
+    } else
+    // if (sortOption === 'asc') {
+    //   return lists.sort((a, b) => listItemCounts[a.list_id] - listItemCounts[b.list_id]);
+    // } else if (sortOption === 'desc') {
+    //   return lists.sort((a, b) => listItemCounts[b.list_id] - listItemCounts[a.list_id]);
+    // }
+  
+
     return lists;
   };
 
   const filterLists = () => {
-    const filtered = lists.filter(list => list.list_name.toLowerCase().includes(searchQuery.toLowerCase()));
+    let filtered = lists.filter(list => list.list_name.toLowerCase().includes(searchQuery.toLowerCase()));
     return sortLists(filtered);
   };
 

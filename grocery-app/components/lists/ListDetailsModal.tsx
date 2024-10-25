@@ -187,7 +187,7 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
           <Text category="h4" style={styles.headerText}>
             {editMode ? "Editing " : ""}{name ? `"${name}"` : ""}
           </Text>
-          <TouchableOpacity style={styles.editButton} onPress={() => { editMode ? handleCancelEdit() : setEditMode(true) }}>
+          <TouchableOpacity testID='edit-button' style={styles.editButton} onPress={() => { editMode ? handleCancelEdit() : setEditMode(true) }}>
             <Icon name="pencil-outline" size={28} color="#000" />
           </TouchableOpacity>
         </View>
@@ -273,7 +273,7 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
           <Button style={styles.noButton} appearance="outline" onPress={editMode ? handleCancelEdit : onClose}>
             {editMode ? "Cancel" : "Close"}
           </Button>
-          <Button style={styles.yesButton} onPress={editMode ? handleSaveList : handleShopList}>
+          <Button testID='save-shop-button' style={styles.yesButton} onPress={editMode ? handleSaveList : handleShopList}>
             {editMode ? "Save List" : "Shop List"}
           </Button>
         </View>

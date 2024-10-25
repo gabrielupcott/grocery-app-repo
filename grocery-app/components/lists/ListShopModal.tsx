@@ -124,6 +124,7 @@ const ListShopModal: React.FC<ListShopModalProps> = ({
                 </Button>
                 {/* Alternate button for when not all items are checked */}
                 <Button
+                    testID="done-button"
                     style={styles.doneButton}
                     onPress={() => handleFinish()}
                     appearance={uncheckedItemsCount === 0 ? "filled" : "outline"} // Change button appearance based on unchecked items
