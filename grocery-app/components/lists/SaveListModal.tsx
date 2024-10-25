@@ -28,12 +28,13 @@ const SaveListModal: React.FC<SaveListModalProps> = ({ visible, onSave, onCancel
             animationType="fade"
             onRequestClose={onCancel} // This will close the modal when back button is pressed on Android
         >
-            <View style={styles.modalOverlay}>
+            <View style={styles.modalOverlay} testID='modal'>
                 <View style={styles.modalContent}>
                     <Text style={styles.title}>Save List</Text>
                     <Input
                         style={styles.input}
                         placeholder="Enter list name"
+                        testID='list-name-input'
                         value={listName}
                         onChangeText={handleNameChange}
                     />

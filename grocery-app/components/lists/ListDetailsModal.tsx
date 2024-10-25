@@ -76,6 +76,13 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
   const handleItemAmountChange = (item: ListItem, newAmount: number) => {
     console.log('New amount:', newAmount);
     if (Number.isNaN(newAmount)) return;
+    if (newAmount <= 0){
+      newAmount = 0;
+      // remove item from list if amount is 0
+      handleItemRemove(item);
+      setModalVisible(false);
+      return;
+    }
     const updatedList = newList.map((i) =>
       i.item_id === item.item_id ? { ...i, amount: newAmount } : i
     );
@@ -120,13 +127,57 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
   };
 
   const handleSaveList = async () => {
-    // Implementation for saving the list
-  };
+    if (!listId || !token || !userId) return;
+  
+    try {
+      // Prepare the list data for the update
+      const listData = {
+        list_name: name, // Use the name prop for the list name
+        // set image to image of first item in list
+        list_image: newList[0]?.item_image || null,
+        user_id: userId,
+        items: newList.map(item => ({
+          [item.item_id]: item.amount, // Structure each item as { item_id: quantity }
+        })),
+      };
 
+      console.log('List data:', listData);
+  
+      // Send the PUT request to update the list
+      await axios.put(`${API_URLS.UPDATE_LIST_BY_ID}/${listId}`, listData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      // Show success message, close edit mode
+      console.log('List updated successfully');
+      setEditMode(false);
+      onClose(); // Optionally close the modal after saving
+    } catch (error) {
+      console.error('Failed to update the list:', error);
+    }
+  };
+  
+  
   const handleCancelEdit = () => {
     setEditMode(false);
     fetchListItems(); // Reset the list to the original state
     onRefresh();
+  };
+
+  const handleAddNewItems = (newItems: ListItem[]) => {
+    console.log('New items:', newItems);
+    // add new non-duplicate items to the list
+    const updatedList = [...newList];
+    newItems.forEach((newItem) => {
+      if (!updatedList.some((item) => item.item_id === newItem.item_id)) {
+        updatedList.push(newItem);
+      }
+    });
+    setNewList(updatedList);
+    // setAddListModalVisible(true);
   };
 
   return (
@@ -200,6 +251,22 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
             />
           </SafeAreaView>
         </Modal>
+
+        {/* AddNewItemModal */}
+        <AddNewItemModal
+          visible={addListModalVisible}
+          onClose={() => setAddListModalVisible(false)}
+          list={items}
+          newList={newList}
+          onSave={handleAddNewItems}
+          userId={userId}
+        />
+
+        {editMode && <View style={styles.actionButtons}>
+          <Button style={styles.noButton} onPress={() => setAddListModalVisible(true)}>
+            Add New Item
+          </Button>
+        </View>}
 
         {/* Buttons for Cancel and Shop List */}
         <View style={styles.actionButtons}>

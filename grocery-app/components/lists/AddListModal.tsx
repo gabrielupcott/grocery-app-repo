@@ -296,7 +296,7 @@ const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token
                     <Button style={styles.cancelButton} appearance="outline" onPress={onClose}>
                         Cancel
                     </Button>
-                    <Button style={styles.saveButton} onPress={() => setSaveModalVisible(true)} disabled={!isListValid}>
+                    <Button testID='save-list-button' style={styles.saveButton} onPress={() => setSaveModalVisible(true)} disabled={!isListValid}>
                         Save List
                     </Button>
                 </View>

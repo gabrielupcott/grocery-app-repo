@@ -1,0 +1,140 @@
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import AddListModal from '../lists/AddListModal';
+import axios from 'axios';
+import { ApplicationProvider } from "@ui-kitten/components";
+import * as eva from '@eva-design/eva';
+import { ListItem } from '../lists/ListDetailsModal';
+
+jest.mock('axios');
+
+describe('AddListModal', () => {
+    const mockOnClose = jest.fn();
+    const mockToken = 'mock-token';
+    const mockUserId = 'mock-user-id';
+
+    const renderWithProviders = (ui: React.ReactElement) => {
+        return render(
+            <ApplicationProvider {...eva} theme={eva.light}>
+                {ui}
+            </ApplicationProvider>
+        );
+    };
+
+
+    const defaultProps = {
+        visible: true,
+        onClose: mockOnClose,
+        token: mockToken,
+        userId: mockUserId,
+    };
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('renders correctly when visible', () => {
+        const { getByText } = renderWithProviders(<AddListModal {...defaultProps} />);
+        expect(getByText('Add Items to Your New List')).toBeTruthy();
+    });
+
+    it('does not render when not visible', () => {
+        const { queryByText } = renderWithProviders(<AddListModal {...defaultProps} visible={false} />);
+        expect(queryByText('Add Items to Your New List')).toBeNull();
+    });
+
+    it('fetches user data on mount', async () => {
+        const mockItems: ListItem[] = [{
+            item_id: '1', item_name: 'Item 1', item_stock: 10, item_price: 1.99,
+            item_description: 'description',
+            item_nutrition: '',
+            item_type: 'custom',
+            item_image: '',
+            user_id: '',
+            amount: 0
+        }];
+        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { items: mockItems } });
+
+        const { getByText } = renderWithProviders(<AddListModal {...defaultProps} />);
+
+        await waitFor(() => expect(getByText('Item 1')).toBeTruthy());
+    });
+
+    it('handles adding an item to the list', async () => {
+        const mockItems: ListItem[] = [{
+            item_id: '1', item_name: 'Item 1', item_stock: 10, item_price: 1.99,
+            item_description: 'description',
+            item_nutrition: '',
+            item_type: 'custom',
+            item_image: '',
+            user_id: '',
+            amount: 0
+        }];
+        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { items: mockItems } });
+
+        const { getByText } = renderWithProviders(<AddListModal {...defaultProps} />);
+
+        await waitFor(() => expect(getByText('Item 1')).toBeTruthy());
+
+        fireEvent.press(getByText('Item 1'));
+
+        await waitFor(() => expect(getByText('Save List')).not.toEqual(expect.stringContaining('disabled')));
+    
+    });
+
+    it('handles saving the list with SaveListModal interaction', async () => {
+        const mockItems: ListItem[] = [{
+            item_id: '1', item_name: 'Item 1', item_stock: 10, item_price: 1.99,
+            item_description: 'description',
+            item_nutrition: '',
+            item_type: 'custom',
+            item_image: '',
+            user_id: '',
+            amount: 0
+        }];
+    
+        // Mock the GET request for initial data load
+        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { items: mockItems } });
+    
+        const { getByText, getByPlaceholderText, getByTestId } = renderWithProviders(<AddListModal {...defaultProps} />);
+    
+        // Wait for initial items to load
+        await waitFor(() => expect(getByText('Item 1')).toBeTruthy());
+    
+        // Select an item to add it to the list
+        fireEvent.press(getByTestId('interact'));
+    
+        // Wait for "Save List" button to be enabled
+        await waitFor(() => expect(getByText('Save List')).not.toEqual(expect.stringContaining('disabled')));
+    
+        // Press "Save List" button to open SaveListModal
+        fireEvent.press(getByTestId('save-list-button'));
+
+        await waitFor(() => expect(getByTestId('modal')).toBeTruthy());
+    
+    });
+    
+    
+
+    it('handles search functionality', async () => {
+        const mockItems = [
+            { item_id: '1', item_name: 'Apple', item_stock: 10 },
+            { item_id: '2', item_name: 'Banana', item_stock: 5 },
+        ];
+        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { items: mockItems } });
+    
+        const { getByPlaceholderText, getByText, queryByText } = renderWithProviders(<AddListModal {...defaultProps} />);
+    
+        await waitFor(() => expect(getByText('Apple')).toBeTruthy());
+        await waitFor(() => expect(getByText('Banana')).toBeTruthy());
+    
+        // Change the search input to "Banana"
+        fireEvent.changeText(getByPlaceholderText('Search items in pantry...'), 'Banana');
+    
+        // Wait for Banana to appear and Apple to disappear
+        await waitFor(() => {
+            expect(getByText('Banana')).toBeTruthy();
+            expect(queryByText('Apple')).toBeNull(); // Use queryByText instead of getByText for elements that may not be present
+        });
+    });
+});

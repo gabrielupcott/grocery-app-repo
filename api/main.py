@@ -900,7 +900,7 @@ def read_list_item_lines(list_id: str, current_user: User = Depends(get_current_
 
 
 
-# Update an existing list, including updating or adding items in list_item_lines
+# Update an existing list, including updating, adding, or removing items in list_item_lines
 @app.put("/lists/{list_id}")
 def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depends(get_current_user)):
     conn = get_db_connection()
@@ -923,10 +923,16 @@ def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depend
             update_values = list(update_data.values()) + [list_id]
             cursor.execute(f"UPDATE lists SET {update_fields} WHERE list_id = ?", update_values)
 
-        # Step 2: Update the items in list_item_lines
+        # Step 2: Fetch current items in the list
+        cursor.execute("SELECT item_id FROM list_item_lines WHERE list_id = ?", (list_id,))
+        current_item_ids = {row[0] for row in cursor.fetchall()}
+
+        # Step 3: Process the items in list_data.items
         if list_data.items is not None:
+            incoming_item_ids = set()
             for item in list_data.items:
                 item_id, quantity = list(item.items())[0]  # Assuming each item is a dict {item_id: quantity}
+                incoming_item_ids.add(item_id)
 
                 # Check if the item already exists in the list
                 cursor.execute(
@@ -955,6 +961,14 @@ def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depend
                         (str(uuid.uuid4()), list_id, item_id, quantity)
                     )
 
+            # Step 4: Identify and delete items removed from the list
+            items_to_remove = current_item_ids - incoming_item_ids
+            if items_to_remove:
+                cursor.executemany(
+                    "DELETE FROM list_item_lines WHERE list_id = ? AND item_id = ?",
+                    [(list_id, item_id) for item_id in items_to_remove]
+                )
+
         # Commit the transaction
         conn.commit()
 
@@ -966,7 +980,6 @@ def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depend
         conn.close()
 
     return {"message": "List updated successfully"}
-
 
 
 # Delete a list by ID

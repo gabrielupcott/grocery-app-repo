@@ -30,6 +30,7 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
     const [newListItems, setNewListItems] = useState<ListItem[]>(newList);
     const [selectedItem, setSelectedItem] = useState<ListItem | null>(null); // State for selected item
     const [modalVisible, setModalVisible] = useState<boolean>(false); // State for details modal
+    const [addedItems, setAddedItems] = useState<ListItem[]>(newList);
 
     // console.log(list);
     useEffect(() => {
@@ -95,6 +96,18 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
         
         let oldList = [...newListItems];
 
+        let oldAddedItems = [...addedItems];
+
+        if (!oldAddedItems.find((newItem) => newItem.item_id === item.item_id)) {
+            oldAddedItems.push({ ...item, amount: amount });
+            setAddedItems(oldAddedItems);
+        } else {
+            // If in newList, update the amount
+            index = oldAddedItems.findIndex((i) => i.item_id === item.item_id);
+            oldAddedItems[index].amount = amount;
+            setAddedItems(oldAddedItems);
+        }
+
         // If not in newList, add it
         if (!newList.find((newItem) => newItem.item_id === item.item_id)) {
             oldList.push({ ...item, amount: amount });
@@ -110,7 +123,7 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
       
         // setNewListItems([...newList, item]);
 
-        console.log("newList is now ", oldList);
+        // console.log("newList is now ", oldList);
       
         // Update the itemAmounts (or newItemAmounts) with the new item's amount
         // setItemAmounts(prevAmounts => ({
@@ -126,6 +139,11 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
 
     const handleItemRemove = (item: ListItem) => {
         // console.log("Removing item:", item);
+
+        let oldAddedItems = [...addedItems];
+        oldAddedItems = oldAddedItems.filter((i) => i.item_id !== item.item_id);
+        setAddedItems(oldAddedItems);
+
         let oldList = [...newListItems];
         oldList = oldList.filter((i) => i.item_id !== item.item_id);
         console.log("oldList", oldList);
@@ -156,8 +174,19 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
           //   ...prevAmounts,
           //   [item.item_id]: newAmount,
             // })
+
+            let oldAddedItems = [...addedItems];
+            let index = oldAddedItems.findIndex((i) => i.item_id === item.item_id);
+            if (index != -1) {
+              oldAddedItems[index].amount = newAmount;
+            } else {
+                oldAddedItems.push({ ...item, amount: newAmount });
+                }
+            setAddedItems(oldAddedItems);
+
+
             let oldItems = [...items];
-            let index = oldItems.findIndex((i) => i.item_id === item.item_id);
+            index = oldItems.findIndex((i) => i.item_id === item.item_id);
             oldItems[index].amount = newAmount;
             setItems(oldItems);
 
@@ -193,14 +222,23 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
     };
 
     const handleSave = () => {
-        console.log("Sending new items:", newListItems);
-        onSave(newListItems);
-        return newListItems;
+        console.log("Sending new items:", addedItems);
+        onSave(addedItems);
+        // reset the added items
+        setAddedItems([]);
+        // return addedItems;
         onClose(); // Close the modal
     };
 
+    const handleClose = () => {
+        addedItems.forEach((item) => {
+            handleItemRemove(item);
+        });
+        onClose();
+    };
+
     return (
-        <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
+        <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={handleClose}>
             <SafeAreaView style={styles.container}>
                 <View style={styles.headerContainer}>
                     <Text category="h4" style={styles.headerText}>
@@ -252,7 +290,7 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
 
                 {/* Buttons for cancel and save */}
                 <View style={styles.actionButtons}>
-                    <Button style={styles.cancelButton} appearance="outline" onPress={onClose}>
+                    <Button style={styles.cancelButton} appearance="outline" onPress={handleClose}>
                         Cancel
                     </Button>
                     <Button style={styles.saveButton} onPress={handleSave} disabled={newListItems.length === 0}>

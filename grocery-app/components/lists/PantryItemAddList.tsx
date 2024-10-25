@@ -42,7 +42,7 @@ const PantryItemAddList: React.FC<PantryItemProps> = ({ item, onAdd, onDelete, i
             {/* Right: horizontal container with Icons for adding and deleting */}
             {
                 onAdd != null && editable ?
-                <TouchableOpacity onPress={inList ? onDelete : onAdd}>
+                <TouchableOpacity onPress={inList ? onDelete : onAdd} testID='interact'>
                     <Icon name={inList ? "playlist-remove" : "playlist-plus"} size={24} color={inList ? "red" : "black"} />
                 </TouchableOpacity>
                 : editable &&

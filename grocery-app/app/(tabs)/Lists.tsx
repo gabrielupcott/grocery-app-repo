@@ -227,7 +227,7 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route })
           visible={listModalVisible}
           listId={selectedList?.list_id ?? null}
           name={selectedList?.list_name ?? null}
-          onClose={() => setListModalVisible(false)}
+          onClose={() => {setListModalVisible(false);handleRefresh();}}
           token={token}
         />
 
