@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI, Depends, HTTPException, status, Security
 from pydantic import BaseModel
 from jose import JWTError, jwt
@@ -18,6 +19,8 @@ import sqlite3
 import uuid  # Add this at the top of the file to generate user IDs
 from typing import Optional
 import bcrypt
+from math import radians, sin, cos, sqrt, atan2
+from typing import List, Dict
 
 # FastAPI app
 app = FastAPI()
@@ -41,6 +44,8 @@ COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
 COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
 COGNITO_REGION = os.getenv("COGNITO_REGION")
 OPEN_FOOD_FACTS_API_URL = os.getenv("OPEN_FOOD_FACTS_API_URL")
+GEOCODING_API_KEY = os.getenv("GEOCODING_API_KEY")
+GEOCODING_API_URL = "https://api.opencagedata.com/geocode/v1/json"
 
 # Dependency
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -105,6 +110,28 @@ class ListUpdate(BaseModel):
     list_image: Optional[str]
     user_id: Optional[str]
     items: Optional[list[dict[str, int]]] = None
+    
+    # Store model
+class StoreCreate(BaseModel):
+    store_name: str
+    store_location: str
+    store_owner_id: str
+    store_flyer_link: str = None
+
+class StoreUpdate(BaseModel):
+    store_name: str = None
+    store_location: str = None
+    store_flyer_link: str = None
+    
+    # Model to represent a store
+class Store(BaseModel):
+    store_id: str
+    store_name: str
+    store_location: str
+    store_owner_id: str
+    store_flyer_link: str
+    latitude: float
+    longitude: float
     
 def init_db():
     """Initialize the SQLite database and create a users table if it doesn't exist."""
@@ -1100,7 +1127,225 @@ def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
 
     return {"message": "User deleted successfully"}
 
+# Create a new store
+@app.post("/stores", status_code=201)
+def create_store(store: StoreCreate):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    store_id = str(uuid.uuid4())
+    try:
+        cursor.execute(
+            '''
+            INSERT INTO stores (store_id, store_name, store_location, store_owner_id, store_flyer_link)
+            VALUES (?, ?, ?, ?, ?)
+            ''',
+            (store_id, store.store_name, store.store_location, store.store_owner_id, store.store_flyer_link)
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Failed to create the store")
+    finally:
+        conn.close()
+    return {"message": "Store created successfully", "store_id": store_id}
 
+# Read a store by ID
+@app.get("/stores/{store_id}")
+def read_store(store_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stores WHERE store_id = ?", (store_id,))
+    store = cursor.fetchone()
+    conn.close()
+    if store is None:
+        raise HTTPException(status_code=404, detail="Store not found")
+    return dict(store)
+
+# Read all stores
+@app.get("/stores")
+def read_all_stores():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stores")
+    stores = cursor.fetchall()
+    conn.close()
+    if not stores:
+        raise HTTPException(status_code=404, detail="No stores found")
+    return {"stores": [dict(store) for store in stores]}
+
+# Read stores by owner ID
+@app.get("/stores/owner/{owner_id}")
+def read_stores_by_owner(owner_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stores WHERE store_owner_id = ?", (owner_id,))
+    stores = cursor.fetchall()
+    conn.close()
+    if not stores:
+        raise HTTPException(status_code=404, detail="No stores found for the owner")
+    return {"stores": [dict(store) for store in stores]}
+
+# Update a store by ID
+@app.put("/stores/{store_id}")
+def update_store(store_id: str, store: StoreUpdate):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stores WHERE store_id = ?", (store_id,))
+    existing_store = cursor.fetchone()
+    if existing_store is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    # Prepare update statement based on fields provided
+    update_data = {k: v for k, v in store.dict(exclude_unset=True).items()}
+    if update_data:
+        update_fields = ', '.join([f"{key} = ?" for key in update_data.keys()])
+        update_values = list(update_data.values())
+        update_values.append(store_id)
+        cursor.execute(f"UPDATE stores SET {update_fields} WHERE store_id = ?", update_values)
+        conn.commit()
+    conn.close()
+    return {"message": "Store updated successfully"}
+
+# Delete a store by ID
+@app.delete("/stores/{store_id}", status_code=204)
+def delete_store(store_id: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stores WHERE store_id = ?", (store_id,))
+    store = cursor.fetchone()
+    if store is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Store not found")
+    cursor.execute("DELETE FROM stores WHERE store_id = ?", (store_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Store deleted successfully"}
+
+# Endpoint to populate the database with two sample stores
+@app.post("/populate-sample-stores")
+def populate_sample_stores():
+    sample_stores = [
+        {
+            "store_name": "Food Basics",
+            "store_location": "845 King St W, Hamilton, ON L8S 1K4",
+            "store_owner_id": "03c40482-bd92-4582-92bc-558f89458be1",
+            "store_flyer_link": "https://www.foodbasics.ca/flyer"
+        },
+        {
+            "store_name": "Fortinos",
+            "store_location": "B, 50 Dundurn St S B, Hamilton, ON L8P 4W3",
+            "store_owner_id": "03c40482-bd92-4582-92bc-558f89458be1",
+            "store_flyer_link": "https://www.fortinos.ca/print-flyer"
+        }
+    ]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    for store in sample_stores:
+        store_id = str(uuid.uuid4())  # Generate a unique ID for each store
+        try:
+            cursor.execute(
+                '''
+                INSERT INTO stores (store_id, store_name, store_location, store_owner_id, store_flyer_link)
+                VALUES (?, ?, ?, ?, ?)
+                ''',
+                (store_id, store["store_name"], store["store_location"], store["store_owner_id"], store["store_flyer_link"])
+            )
+        except sqlite3.IntegrityError:
+            conn.close()
+            raise HTTPException(status_code=400, detail=f"Failed to add store: {store['store_name']}")
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "Sample stores added successfully"}
+
+# Helper function to get coordinates
+def get_coordinates(address: str) -> dict:
+    params = {
+        'q': address,
+        'key': GEOCODING_API_KEY,
+        'limit': 1
+    }
+    response = requests.get(GEOCODING_API_URL, params=params)
+    data = response.json()
+
+    if response.status_code == 200 and data['results']:
+        return {
+            'latitude': data['results'][0]['geometry']['lat'],
+            'longitude': data['results'][0]['geometry']['lng']
+        }
+    else:
+        print(f"Error retrieving coordinates for address: {address}")
+        return None
+
+# Function to calculate distance between two coordinates
+def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    # Convert latitude and longitude from degrees to radians
+    rlat1, rlon1, rlat2, rlon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula
+    dlon = rlon2 - rlon1
+    dlat = rlat2 - rlat1
+    a = sin(dlat / 2)**2 + cos(rlat1) * cos(rlat2) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    distance = 6371 * c  # Radius of earth in kilometers (6371)
+
+    return distance
+
+# Endpoint to get nearby stores within 50 km of a specified location
+@app.get("/nearby_stores")
+# def get_nearby_stores(current_location: str, current_user: User = Depends(get_current_user)) -> List[Store]:
+def get_nearby_stores(current_location: str) -> List[Store]:
+
+    # Convert current location to coordinates
+    current_coords = get_coordinates(current_location)
+    if not current_coords:
+        raise HTTPException(status_code=404, detail="Could not find coordinates for the provided location.")
+
+    conn = sqlite3.connect(DATABASE_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM stores")
+    stores = cursor.fetchall()
+    conn.close()
+
+    nearby_stores = []
+    for store in stores:
+        # Get coordinates for each store location
+        store_coords = get_coordinates(store["store_location"])
+        
+        if store_coords:
+            # Calculate distance and check if within 50 km
+            distance = calculate_distance(current_coords['latitude'], current_coords['longitude'],
+                                          store_coords['latitude'], store_coords['longitude'])
+            if distance <= 50:
+                nearby_stores.append({
+                    "store_id": store["store_id"],
+                    "store_name": store["store_name"],
+                    "store_location": store["store_location"],
+                    "store_owner_id": store["store_owner_id"],
+                    "store_flyer_link": store["store_flyer_link"],
+                    "latitude": store_coords["latitude"],
+                    "longitude": store_coords["longitude"]
+                })
+        else:
+            print(f"Skipping store due to missing coordinates: {store['store_name']} at {store['store_location']}")
+
+    if not nearby_stores:
+        raise HTTPException(status_code=404, detail="No stores found within 50 km.")
+
+    return nearby_stores
+
+
+# Endpoint to get stores within 50km of the current location
+@app.get("/stores/poop")
+# def get_nearby_stores(current_location: str, current_user: User = Depends(get_current_user)) -> List[Store]:
+def get_nearby_asdasd(current_location: str) -> List[Store]:
+    print(current_location)
+
+    return current_location
 
 # Main function to run the application
 if __name__ == "__main__":
