@@ -98,6 +98,8 @@ const Login: React.FC = () => {
       // Store the token in SecureStore
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("userName", values.username);
+      
+      // await SecureStore.setItemAsync("userType", response.data.user_type);
 
       const response2 = await axios.get(`${API_URLS.GET_USERID_BY_EMAIL}?email=${values.username}`, {
         headers: {

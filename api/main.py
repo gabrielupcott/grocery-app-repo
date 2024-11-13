@@ -77,6 +77,13 @@ class TokenData(BaseModel):
 class User(BaseModel):
     username: str
     
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
+    user_location: Optional[str] = None
+    name: Optional[str] = None
+    role: Optional[int] = None
+
 # Models for item operations
 class ItemCreate(BaseModel):
     item_name: str
@@ -311,6 +318,69 @@ def register(user: UserRegister):
 
     return {"message": "User registered successfully"}
 
+@app.put("/alter-users-table")
+def alter_users_table():
+    """
+    Alter the users table to add the user_location column if it does not exist.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Execute the ALTER TABLE command to add the user_location column
+        cursor.execute("ALTER TABLE users ADD COLUMN user_location TEXT")
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        # Check if the column already exists
+        if "duplicate column name" in str(e).lower():
+            return {"message": "Column 'user_location' already exists in the 'users' table."}
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to alter table: {str(e)}")
+    finally:
+        conn.close()
+    
+    return {"message": "Column 'user_location' added to the 'users' table successfully."}
+
+@app.put("/users/{user_id}")
+def update_user(user_id: str, user_update: UserUpdate):
+    """
+    Update user details in the users table.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Check if the user exists
+    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+    existing_user = cursor.fetchone()
+    if not existing_user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Prepare fields to be updated
+    update_data = {}
+    if user_update.email:
+        update_data["user_email"] = user_update.email
+    if user_update.password:
+        hashed_password = bcrypt.hashpw(user_update.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        update_data["user_password"] = hashed_password
+    if user_update.user_location:
+        update_data["user_location"] = user_update.user_location
+    if user_update.name:
+        update_data["user_name"] = user_update.name
+    if user_update.role is not None:
+        update_data["user_type"] = user_update.role
+
+    # Build the SQL statement
+    if update_data:
+        update_fields = ', '.join([f"{key} = ?" for key in update_data.keys()])
+        update_values = list(update_data.values()) + [user_id]
+
+        cursor.execute(f"UPDATE users SET {update_fields} WHERE user_id = ?", update_values)
+        conn.commit()
+
+    conn.close()
+    
+    return {"message": "User updated successfully"}
+
 @app.get("/users")
 def get_users():
     """Get users from the SQLite database."""
@@ -320,6 +390,45 @@ def get_users():
     users = cursor.fetchall()
     conn.close()
     return {"users": users}
+
+@app.get("/user-type/{username}")
+async def get_user_type(username: str, current_user: User = Depends(get_current_user)):
+    """
+    Retrieve the user type for the given username.
+    Requires authentication.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Query to fetch user_type based on the username
+    cursor.execute("SELECT user_type FROM users WHERE user_email = ?", (username,))
+    user_type = cursor.fetchone()
+    conn.close()
+
+    if not user_type:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return {"username": username, "user_type": user_type[0]}
+
+@app.get("/user-location/{username}")
+async def get_user_location(username: str, current_user: User = Depends(get_current_user)):
+    """
+    Retrieve the location for the given username.
+    Requires authentication.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Query to fetch user_location based on the username
+    cursor.execute("SELECT user_location FROM users WHERE user_email = ?", (username,))
+    user_location = cursor.fetchone()
+    conn.close()
+
+    if not user_location:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return {"username": username, "user_location": user_location[0]}
+
 
 @app.post("/token", response_model=dict)
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -1127,13 +1236,25 @@ def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
 
     return {"message": "User deleted successfully"}
 
-# Create a new store
 @app.post("/stores", status_code=201)
 def create_store(store: StoreCreate):
     conn = get_db_connection()
     cursor = conn.cursor()
     store_id = str(uuid.uuid4())
     try:
+        # Check if store with same location exists
+        cursor.execute(
+            'SELECT store_id FROM stores WHERE store_location = ?',
+            (store.store_location,)
+        )
+        existing_store = cursor.fetchone()
+        if existing_store:
+            raise HTTPException(
+                status_code=400, 
+                detail="A store at this location already exists"
+            )
+
+        # If no duplicate, proceed with insertion
         cursor.execute(
             '''
             INSERT INTO stores (store_id, store_name, store_location, store_owner_id, store_flyer_link)
@@ -1263,6 +1384,13 @@ def populate_sample_stores():
 
 # Helper function to get coordinates
 def get_coordinates(address: str) -> dict:
+    # # return error
+    # return None
+    
+    # return sample coordinates
+    return {"latitude": 43.255669, "longitude": -79.083306}
+
+    
     params = {
         'q': address,
         'key': GEOCODING_API_KEY,
@@ -1270,6 +1398,8 @@ def get_coordinates(address: str) -> dict:
     }
     response = requests.get(GEOCODING_API_URL, params=params)
     data = response.json()
+    
+    print(data)
 
     if response.status_code == 200 and data['results']:
         return {
@@ -1279,6 +1409,24 @@ def get_coordinates(address: str) -> dict:
     else:
         print(f"Error retrieving coordinates for address: {address}")
         return None
+
+@app.get("/user-location-coordinates")
+# async def get_user_location_coordinates(address: str, current_user: User = Depends(get_current_user)):
+async def get_user_location_coordinates(address: str):
+
+    """
+    Retrieve the latitude and longitude coordinates for a given address.
+    Requires authentication.
+    """
+    print(f"Address received: {address}")
+    
+    coordinates = get_coordinates(address)
+    
+    if not coordinates:
+        raise HTTPException(status_code=404, detail="Coordinates not found for the provided location")
+
+    return {"latitude": coordinates['latitude'], "longitude": coordinates['longitude']}
+
 
 # Function to calculate distance between two coordinates
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -1295,7 +1443,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return distance
 
 # Endpoint to get nearby stores within 50 km of a specified location
-@app.get("/nearby_stores")
+@app.get("/nearby-stores")
 # def get_nearby_stores(current_location: str, current_user: User = Depends(get_current_user)) -> List[Store]:
 def get_nearby_stores(current_location: str) -> List[Store]:
 
@@ -1339,13 +1487,21 @@ def get_nearby_stores(current_location: str) -> List[Store]:
     return nearby_stores
 
 
-# Endpoint to get stores within 50km of the current location
-@app.get("/stores/poop")
-# def get_nearby_stores(current_location: str, current_user: User = Depends(get_current_user)) -> List[Store]:
-def get_nearby_asdasd(current_location: str) -> List[Store]:
-    print(current_location)
-
-    return current_location
+@app.post("/verify-location")
+def verify_location(address: str):
+    """
+    Verify if a location can be found based on its address.
+    """
+    coordinates = get_coordinates(address)
+    if coordinates:
+        return {
+            "found": True,
+            "message": "Location found",
+            "latitude": coordinates["latitude"],
+            "longitude": coordinates["longitude"]
+        }
+    else:
+        raise HTTPException(status_code=404, detail="Location not found")
 
 # Main function to run the application
 if __name__ == "__main__":

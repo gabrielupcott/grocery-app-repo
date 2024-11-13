@@ -20,5 +20,15 @@ export const API_URLS = {
   ADD_LIST: `${BASE_URL}/lists`,
   ADD_ITEM: `${BASE_URL}/items`,
   PRODUCT_INFO: `${BASE_URL}/product-info`,
+  GET_USER_TYPE: `${BASE_URL}/user-type`,
+  GET_USER_LOCATION: `${BASE_URL}/user-location`,
+  VERIFY_LOCATION: `${BASE_URL}/verify-location`,
+  NEARBY_STORES: `${BASE_URL}/nearby-stores`,
+  GET_USER_LOCATION_COORDINATES: `${BASE_URL}/user-location-coordinates`,
+  GET_STORES_BY_OWNER: `${BASE_URL}/stores/owner`,
+  CREATE_STORE: `${BASE_URL}/stores`,
+  UPDATE_STORE: `${BASE_URL}/stores`,
+  DELETE_STORE: `${BASE_URL}/stores`,
+
   // Add other endpoints as needed
 };

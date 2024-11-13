@@ -1,0 +1,59 @@
+"filename", "language", "Markdown", "TypeScript JSX", "TypeScript", "JSON with Comments", "JSON", "JavaScript", "XML", "Database", "Python", "comment", "blank", "total"
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\README.md", "Markdown", 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\api\main.py", "Python", 0, 0, 0, 0, 0, 0, 0, 0, 1164, 111, 232, 1507
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\api\package-lock.json", "JSON", 0, 0, 0, 0, 7555, 0, 0, 0, 0, 0, 1, 7556
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\api\package.json", "JSON", 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 1, 9
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\api\test.db", "Database", 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 1, 97
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\__tests__\Login.test.tsx", "TypeScript JSX", 0, 114, 0, 0, 0, 0, 0, 0, 0, 2, 24, 140
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\__tests__\Register.test.tsx", "TypeScript JSX", 0, 103, 0, 0, 0, 0, 0, 0, 0, 4, 15, 122
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\__tests__\index.test.tsx", "TypeScript JSX", 0, 52, 0, 0, 0, 0, 0, 0, 0, 2, 12, 66
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app.json", "JSON", 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 1, 39
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\(tabs)\Lists.tsx", "TypeScript JSX", 0, 248, 0, 0, 0, 0, 0, 0, 0, 10, 32, 290
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\(tabs)\Stores.tsx", "TypeScript JSX", 0, 184, 0, 0, 0, 0, 0, 0, 0, 17, 23, 224
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\(tabs)\_layout.tsx", "TypeScript JSX", 0, 37, 0, 0, 0, 0, 0, 0, 0, 54, 9, 100
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\(tabs)\index.tsx", "TypeScript JSX", 0, 312, 0, 0, 0, 0, 0, 0, 0, 21, 46, 379
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\+html.tsx", "TypeScript JSX", 0, 24, 0, 0, 0, 0, 0, 0, 0, 10, 5, 39
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\+not-found.tsx", "TypeScript JSX", 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 5, 41
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\Login.tsx", "TypeScript JSX", 0, 217, 0, 0, 0, 0, 0, 0, 0, 2, 29, 248
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\Register.tsx", "TypeScript JSX", 0, 201, 0, 0, 0, 0, 0, 0, 0, 0, 13, 214
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\Verify.tsx", "TypeScript JSX", 0, 283, 0, 0, 0, 0, 0, 0, 0, 10, 26, 319
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\_layout.tsx", "TypeScript JSX", 0, 50, 0, 0, 0, 0, 0, 0, 0, 18, 14, 82
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\index.tsx", "TypeScript JSX", 0, 84, 0, 0, 0, 0, 0, 0, 0, 5, 4, 93
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\app\index2.tsx", "TypeScript JSX", 0, 25, 0, 0, 0, 0, 0, 0, 0, 7, 7, 39
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\assets\images\no-image.svg", "XML", 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\babel.config.js", "JavaScript", 0, 0, 0, 0, 0, 7, 0, 0, 0, 3, 1, 11
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\Themed.tsx", "TypeScript JSX", 0, 31, 0, 0, 0, 0, 0, 0, 0, 4, 11, 46
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\__tests__\lists\AddListModal.test.tsx", "TypeScript JSX", 0, 100, 0, 0, 0, 0, 0, 0, 0, 7, 33, 140
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\__tests__\lists\ListDetailsModal.test.tsx", "TypeScript JSX", 0, 133, 0, 0, 0, 0, 0, 0, 0, 2, 35, 170
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\__tests__\lists\ListShopModal.test.tsx", "TypeScript JSX", 0, 127, 0, 0, 0, 0, 0, 0, 0, 3, 21, 151
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\__tests__\pantry\AddItemModal.test.tsx", "TypeScript JSX", 0, 102, 0, 0, 0, 0, 0, 0, 0, 4, 33, 139
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\AddListModal.tsx", "TypeScript JSX", 0, 312, 0, 0, 0, 0, 0, 0, 0, 29, 44, 385
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\AddNewItemModal.tsx", "TypeScript JSX", 0, 262, 0, 0, 0, 0, 0, 0, 0, 39, 45, 346
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\CongratsModal.tsx", "TypeScript JSX", 0, 139, 0, 0, 0, 0, 0, 0, 0, 2, 10, 151
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\ItemDetailsListModal.tsx", "TypeScript JSX", 0, 257, 0, 0, 0, 0, 0, 0, 0, 2, 16, 275
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\List.tsx", "TypeScript JSX", 0, 210, 0, 0, 0, 0, 0, 0, 0, 20, 30, 260
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\ListDetailsModal.tsx", "TypeScript JSX", 0, 287, 0, 0, 0, 0, 0, 0, 0, 15, 32, 334
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\ListShopModal.tsx", "TypeScript JSX", 0, 155, 0, 0, 0, 0, 0, 0, 0, 8, 19, 182
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\PantryItemAddList.tsx", "TypeScript JSX", 0, 66, 0, 0, 0, 0, 0, 0, 0, 7, 10, 83
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\SaveListModal.tsx", "TypeScript JSX", 0, 82, 0, 0, 0, 0, 0, 0, 0, 0, 8, 90
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\lists\ShoppingItem.tsx", "TypeScript JSX", 0, 65, 0, 0, 0, 0, 0, 0, 0, 3, 9, 77
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\pantry\AddItemModal.tsx", "TypeScript JSX", 0, 323, 0, 0, 0, 0, 0, 0, 0, 12, 24, 359
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\pantry\BarcodeScannerScreen.tsx", "TypeScript JSX", 0, 202, 0, 0, 0, 0, 0, 0, 0, 2, 20, 224
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\pantry\DeleteConfirmationModal.tsx", "TypeScript JSX", 0, 69, 0, 0, 0, 0, 0, 0, 0, 2, 5, 76
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\pantry\ItemDetailsModal.tsx", "TypeScript JSX", 0, 422, 0, 0, 0, 0, 0, 0, 0, 2, 30, 454
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\pantry\PantryItem.tsx", "TypeScript JSX", 0, 82, 0, 0, 0, 0, 0, 0, 0, 7, 10, 99
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\stores\OwnerStores.tsx", "TypeScript JSX", 0, 325, 0, 0, 0, 0, 0, 0, 0, 4, 28, 357
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\stores\StoreListItem.tsx", "TypeScript JSX", 0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 6, 60
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\useClientOnlyValue.ts", "TypeScript", 0, 0, 3, 0, 0, 0, 0, 0, 0, 1, 1, 5
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\useClientOnlyValue.web.ts", "TypeScript", 0, 0, 8, 0, 0, 0, 0, 0, 0, 2, 3, 13
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\useColorScheme.ts", "TypeScript", 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\components\useColorScheme.web.ts", "TypeScript", 0, 0, 3, 0, 0, 0, 0, 0, 0, 5, 1, 9
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\constants\Colors.ts", "TypeScript", 0, 0, 18, 0, 0, 0, 0, 0, 0, 0, 2, 20
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\constants\constants.ts", "TypeScript", 0, 0, 25, 0, 0, 0, 0, 0, 0, 4, 3, 32
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\jest.setup.js", "JavaScript", 0, 0, 0, 0, 0, 27, 0, 0, 0, 4, 6, 37
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\mapping.json", "JSON", 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 8
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\package-lock.json", "JSON", 0, 0, 0, 0, 21066, 0, 0, 0, 0, 0, 1, 21067
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\package.json", "JSON", 0, 0, 0, 0, 83, 0, 0, 0, 0, 0, 1, 84
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\theme\custom-theme.json", "JSON", 0, 0, 0, 0, 47, 0, 0, 0, 0, 0, 0, 47
+"c:\Users\gabe\Documents\School\sem6\cap\repo\capstone-project-gabrielupcott\grocery-app\tsconfig.json", "JSON with Comments", 0, 0, 0, 17, 0, 0, 0, 0, 0, 0, 1, 18
+"Total", "-", 2, 5775, 58, 17, 28805, 34, 1, 96, 1164, 466, 1001, 37419
