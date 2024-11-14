@@ -43,13 +43,15 @@ describe('Stores Component', () => {
         (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('testUser').mockResolvedValueOnce('testToken');
         (axios.get as jest.Mock).mockResolvedValueOnce({ data: { user_type: 1 } });
         (axios.get as jest.Mock).mockResolvedValueOnce({ data: { user_location: 'testLocation' } });
+        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { latitude: 33.5186, longitude: -86.8104 } });
+        // (axios.get as jest.Mock).mockResolvedValueOnce({ data: { latitude: 33.5186, longitude: -86.8104 } });
         (axios.get as jest.Mock).mockResolvedValueOnce({ data: [{ store_id: '1', store_name: 'Test Store', store_location: 'Test Location' }] });
-        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { latitude: 33.5186, longitude: -86.8104 } });
-        (axios.get as jest.Mock).mockResolvedValueOnce({ data: { latitude: 33.5186, longitude: -86.8104 } });
+
 
         const { getByText, getByTestId, getAllByText } = renderWithProviders(<Stores navigation={{}} route={{}} />);
 
         await waitFor(() => expect(getAllByText('Stores')).toBeTruthy());
+
         expect(getByText('Test Store')).toBeTruthy();
     });
 

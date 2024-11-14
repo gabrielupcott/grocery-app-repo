@@ -26,6 +26,7 @@ const Stores: React.FC<{ navigation: any; route: any }> = ({ navigation, route }
   const [nearbyStores, setNearbyStores] = useState<Store[]>([]);
   const [customLocation, setCustomLocation] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [errorText, setErrorText] = useState<string | null>(null);
 
   useEffect(() => {
     loadUserData();
@@ -69,31 +70,26 @@ const Stores: React.FC<{ navigation: any; route: any }> = ({ navigation, route }
     try {
       setLoading(true);
 
-      const storesResponse = await axios.get(`${API_URLS.NEARBY_STORES}?current_location=${location}`);
-      const storePromises = storesResponse.data.map(async (store: Store) => {
-        const coordsResponse = await axios.get(`${API_URLS.GET_USER_LOCATION_COORDINATES}`, {
-          params: { address: store.store_location },
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        return {
-          ...store,
-          latitude: coordsResponse.data.latitude,
-          longitude: coordsResponse.data.longitude,
-        };
-      });
-
-      const storesWithCoordinates = await Promise.all(storePromises);
-      setNearbyStores(storesWithCoordinates);
-
       const userCoordsResponse = await axios.get(`${API_URLS.GET_USER_LOCATION_COORDINATES}`, {
         params: { address: location },
         headers: { Authorization: `Bearer ${token}` },
       });
-
+      
       setUserCoordinates({
         latitude: userCoordsResponse.data.latitude,
         longitude: userCoordsResponse.data.longitude,
       });
+
+      const storesResponse = await axios.get(`${API_URLS.NEARBY_STORES}?current_location=${location}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const storesWithCoordinates = storesResponse.data.map((store: Store) => ({
+        ...store,
+        latitude: store.latitude,
+        longitude: store.longitude,
+      }));
+      setNearbyStores(storesWithCoordinates);
 
     } catch (error) {
       console.error("Failed to fetch nearby stores:", error);
@@ -159,7 +155,7 @@ const Stores: React.FC<{ navigation: any; route: any }> = ({ navigation, route }
         ))}
       </MapView>
 
-      <FlatList
+      {errorText ? <Text>Error: {errorText ? errorText : ""}</Text> : <FlatList
         data={nearbyStores}
         keyExtractor={(store) => store.store_id}
         renderItem={({ item }) => (
@@ -171,7 +167,8 @@ const Stores: React.FC<{ navigation: any; route: any }> = ({ navigation, route }
         )}
         contentContainerStyle={styles.storeList}
         ListHeaderComponent={<Text category="h5" style={styles.listHeader}>Stores</Text>}
-      />
+        ListEmptyComponent={<Text style={styles.listHeader}>No stores near you found...</Text>}
+      />}
     </SafeAreaView>
   );
 };

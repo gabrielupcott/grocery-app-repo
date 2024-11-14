@@ -1387,10 +1387,9 @@ def get_coordinates(address: str) -> dict:
     # # return error
     # return None
     
-    # return sample coordinates
-    return {"latitude": 43.255669, "longitude": -79.083306}
+    # # return sample coordinates
+    # return {"latitude": 43.255669, "longitude": -79.083306}
 
-    
     params = {
         'q': address,
         'key': GEOCODING_API_KEY,
