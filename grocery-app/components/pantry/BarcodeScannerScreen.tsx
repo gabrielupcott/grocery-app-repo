@@ -5,7 +5,7 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from '@react-navigation/native';
-import { API_URLS } from '@/constants/constants';
+import { API_URLS } from '../../constants/constants';
 import AddItemModal from './AddItemModal';
 
 type BarcodeScannerScreenProps = {

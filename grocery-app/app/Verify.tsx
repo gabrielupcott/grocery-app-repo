@@ -120,73 +120,74 @@ const Verify: React.FC = () => {
     }
   };
 
-  const onResend = async () => {
-    try {
-      // Get the stored username from SecureStore
-      const email = await SecureStore.getItemAsync("userName");
+  // Currently disabled
+  // const onResend = async () => {
+  //   try {
+  //     // Get the stored username from SecureStore
+  //     const email = await SecureStore.getItemAsync("userName");
   
-      if (!email) {
-        setGeneralError("Email not found. Please register again.");
-        return;
-      }
+  //     if (!email) {
+  //       setGeneralError("Email not found. Please register again.");
+  //       return;
+  //     }
   
-      // Make API call to resend confirmation code
-      const response = await axios.post(
-        `${API_URLS.RESEND_CONFIRMATION_CODE}`, // Your FastAPI endpoint for resending the code
-        {
-          username: email,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  //     // Make API call to resend confirmation code
+  //     const response = await axios.post(
+  //       `${API_URLS.RESEND_CONFIRMATION_CODE}`, // Your FastAPI endpoint for resending the code
+  //       {
+  //         username: email,
+  //       },
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
   
-      // If successful, show success message and disable the button
-      console.log("Resend successful:", response.data);
-      setResent(true); // Disable button after resending
-      Toast.show("Code resent successfully!", {
-        duration: Toast.durations.LONG,
-        position: Toast.positions.BOTTOM,
-        shadow: true,
-        animation: true,
-        hideOnPress: true,
-        delay: 0,
-      });
-    } catch (error) {
-      const axiosError = error as CustomAxiosError;
-      if (axiosError.response) {
-        const errorMessage = axiosError.response.data.messages
-          ? axiosError.response.data.messages.join("\n")
-          : "Resending code failed. Please try again.";
-        setGeneralError(errorMessage);
+  //     // If successful, show success message and disable the button
+  //     console.log("Resend successful:", response.data);
+  //     setResent(true); // Disable button after resending
+  //     Toast.show("Code resent successfully!", {
+  //       duration: Toast.durations.LONG,
+  //       position: Toast.positions.BOTTOM,
+  //       shadow: true,
+  //       animation: true,
+  //       hideOnPress: true,
+  //       delay: 0,
+  //     });
+  //   } catch (error) {
+  //     const axiosError = error as CustomAxiosError;
+  //     if (axiosError.response) {
+  //       const errorMessage = axiosError.response.data.messages
+  //         ? axiosError.response.data.messages.join("\n")
+  //         : "Resending code failed. Please try again.";
+  //       setGeneralError(errorMessage);
   
-        // Show error toast
-        Toast.show(errorMessage, {
-          duration: Toast.durations.LONG,
-          position: Toast.positions.BOTTOM,
-          shadow: true,
-          animation: true,
-          hideOnPress: true,
-          delay: 0,
-        });
-      } else {
-        const defaultErrorMessage = "An unknown error occurred. Please try again.";
-        setGeneralError(defaultErrorMessage);
+  //       // Show error toast
+  //       Toast.show(errorMessage, {
+  //         duration: Toast.durations.LONG,
+  //         position: Toast.positions.BOTTOM,
+  //         shadow: true,
+  //         animation: true,
+  //         hideOnPress: true,
+  //         delay: 0,
+  //       });
+  //     } else {
+  //       const defaultErrorMessage = "An unknown error occurred. Please try again.";
+  //       setGeneralError(defaultErrorMessage);
   
-        // Show default error toast
-        Toast.show(defaultErrorMessage, {
-          duration: Toast.durations.LONG,
-          position: Toast.positions.BOTTOM,
-          shadow: true,
-          animation: true,
-          hideOnPress: true,
-          delay: 0,
-        });
-      }
-    }
-  };
+  //       // Show default error toast
+  //       Toast.show(defaultErrorMessage, {
+  //         duration: Toast.durations.LONG,
+  //         position: Toast.positions.BOTTOM,
+  //         shadow: true,
+  //         animation: true,
+  //         hideOnPress: true,
+  //         delay: 0,
+  //       });
+  //     }
+  //   }
+  // };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -249,6 +250,7 @@ const Verify: React.FC = () => {
           )}
         </Formik>
 
+        {/* disabled
         <View style={styles.bottomContainer}>
           <Text style={{ marginRight: 5 }}>Didn't get a code?</Text>
           <Button
@@ -259,7 +261,7 @@ const Verify: React.FC = () => {
           >
             {resent ? "Code Resent" : "Resend code"}
           </Button>
-        </View>
+        </View> */}
       </View>
     </SafeAreaView>
   );

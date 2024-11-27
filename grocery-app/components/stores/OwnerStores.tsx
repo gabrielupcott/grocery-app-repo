@@ -3,7 +3,7 @@ import { View, StyleSheet, FlatList, ActivityIndicator, Modal, TextInput, Refres
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from "react-native-maps";
 import axios from "axios";
-import { API_URLS } from "@/constants/constants";
+import { API_URLS } from "../../constants/constants";
 import StoreListItem from '@/components/stores/StoreListItem';
 import { FloatingAction } from "react-native-floating-action";
 import { Text, Button } from '@ui-kitten/components';
@@ -166,7 +166,10 @@ const OwnerStores: React.FC<OwnerStoresProps> = ({ userId, token }) => {
           store_flyer_link: storeFlyerLink,
         };
 
-        await axios.put(`${API_URLS.UPDATE_STORE}/${storeId}`, updatedStoreData);
+        await axios.put(`${API_URLS.UPDATE_STORE}/${storeId}`, updatedStoreData, 
+          { headers: { Authorization: `Bearer ${token}` }
+        });
+        
 
         setIsEditModalVisible(false);
         setInitialLoading(true);
@@ -211,7 +214,10 @@ const OwnerStores: React.FC<OwnerStoresProps> = ({ userId, token }) => {
 
   const verifyLocation = async (location: string) => {
     try {
-      const response = await axios.post(`${API_URLS.VERIFY_LOCATION}?address=${location}`);
+      const response = await axios.post(`${API_URLS.VERIFY_LOCATION}?address=${location}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+      );
       if (response.status === 200 && response.data.found) {
         setIsLocationValid(true);
         setLocationError("");

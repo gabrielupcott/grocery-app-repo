@@ -124,6 +124,7 @@ const Login: React.FC = () => {
         const errorMessage = axiosError.response.data.messages[0];
         setGeneralError(errorMessage);
       } else {
+        console.error("Login error:", axiosError);
         setGeneralError("An unexpected error occurred. Check your login information.");
       }
     } finally {

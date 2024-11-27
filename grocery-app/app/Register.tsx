@@ -41,6 +41,8 @@ const Register: React.FC = () => {
     try {
       const response = await axios.post(
         API_URLS.VERIFY_LOCATION + "?address=" + location,
+        {},
+        { headers: { "Authorization": `Bearer ${SecureStore.getItemAsync("token")}` } }
       );
       if (response.status === 200 && response.data.found) {
         setIsLocationValid(true);

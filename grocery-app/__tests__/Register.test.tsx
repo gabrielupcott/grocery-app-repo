@@ -80,7 +80,8 @@ describe("Register Component", () => {
         fireEvent.changeText(getByPlaceholderText("Confirm Password"), "password123");
 
         // Mock location verification step before registration
-        mockedAxios.post.mockResolvedValueOnce({ data: { found: true } });
+        // this endpoint expects authentication token in the header
+        mockedAxios.post.mockResolvedValueOnce({ data: { found: true } });        
         
         fireEvent.press(getByTestId("register-button"));
 
@@ -106,7 +107,7 @@ describe("Register Component", () => {
     
         // Fill out the form
         fireEvent.changeText(getByPlaceholderText("Name"), "John Doe");
-        fireEvent.changeText(getByPlaceholderText("Location"), "Nowehere");
+        fireEvent.changeText(getByPlaceholderText("Location"), "Nowhere");
         fireEvent.changeText(getByPlaceholderText("Email"), "john@example.com");
         fireEvent.changeText(getByPlaceholderText("Password"), "password123");
         fireEvent.changeText(getByPlaceholderText("Confirm Password"), "password123");
@@ -117,7 +118,7 @@ describe("Register Component", () => {
         // Assert that the location verification was called first
         await waitFor(() => {
             expect(mockedAxios.post).toHaveBeenCalledWith(
-                `${API_URLS.VERIFY_LOCATION}?address=Nowehere`
+                `${API_URLS.VERIFY_LOCATION}?address=Nowhere`, {}, {"headers": {"Authorization": "Bearer undefined"}}
             );
         });
     
