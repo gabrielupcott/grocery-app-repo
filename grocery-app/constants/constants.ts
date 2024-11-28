@@ -1,10 +1,8 @@
 // constants.ts
-const BASE_URL = "http://172.105.20.48";
+
+// DEPLOYED API URL:
+const BASE_URL = "https://nicolas-capstone.duckdns.org/";
 // const BASE_URL = "http://10.0.2.2:8000"; //WHEN API RUNNING LOCALLY: 
-
-
-// base url for web
-// const BASE_URL = "http://127.0.0.1:8000";
 
 export const API_URLS = {
   API_TEST: `${BASE_URL}/`,

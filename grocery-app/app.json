@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "grocery-app",
+    "name": "Grocery App",
     "slug": "grocery-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/splash-screen.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -25,7 +25,12 @@
       "permissions": [
         "CAMERA",
         "INTERNET"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCuovgWLEXeesGH5a2FL7G0VPgXfsT_DWA"
+          }
+        }
     },
     "web": {
       "bundler": "metro",
