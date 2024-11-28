@@ -19,7 +19,13 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.gabeupcott.groceryapp",
+      "networkSecurityConfig": "./res/xml/network_security_config.xml",
+      "permissions": [
+        "CAMERA",
+        "INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -29,10 +35,26 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      ["expo-build-properties", 
+      {
+        "android": {
+          "networkSecurityConfig": {
+            "clearTextTrafficPermitted": true
+          }
+        }
+      }]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "522ba022-1888-4e97-afe5-4f8ee0c3fbd9"
+      }
     }
   }
 }

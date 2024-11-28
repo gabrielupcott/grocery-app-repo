@@ -59,7 +59,7 @@ const Login: React.FC = () => {
       if (axiosError.code === 'ECONNABORTED') {
         setGeneralError("API request timed out. Please try again.");
       } else {
-        setGeneralError("An error occurred while connecting to the API.");
+        setGeneralError("An error occurred while connecting to the API: " + axiosError.message + " " + axiosError.code);
       }
       console.error("API Test error:", error);
     }
@@ -101,11 +101,7 @@ const Login: React.FC = () => {
       
       // await SecureStore.setItemAsync("userType", response.data.user_type);
 
-      const response2 = await axios.get(`${API_URLS.GET_USERID_BY_EMAIL}?email=${values.username}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response2 = await axios.get(`${API_URLS.GET_USERID_BY_EMAIL}?email=${values.username}`);
 
       const user_id = response2.data.user_id;
       console.log("User ID:", user_id);
@@ -125,7 +121,8 @@ const Login: React.FC = () => {
         setGeneralError(errorMessage);
       } else {
         console.error("Login error:", axiosError);
-        setGeneralError("An unexpected error occurred. Check your login information.");
+        setGeneralError("Error: " + axiosError.message);
+        // setGeneralError("An unexpected error occurred. Check your login information.");
       }
     } finally {
       setSubmitting(false);
