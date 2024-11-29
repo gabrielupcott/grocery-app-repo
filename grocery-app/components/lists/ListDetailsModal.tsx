@@ -132,24 +132,27 @@ const ListDetailsModal: React.FC<ListDetailsModalProps> = ({ visible, listId, na
     try {
       // Prepare the list data for the update
       const listData = {
-        list_name: name, // Use the name prop for the list name
-        // set image to image of first item in list
+        list_name: name, 
         list_image: newList[0]?.item_image || null,
         user_id: userId,
-        items: newList.map(item => ({
-          [item.item_id]: item.amount, // Structure each item as { item_id: quantity }
-        })),
-      };
+        items: [
+            newList.reduce((acc: { [key: string]: number }, item) => {
+                acc[item.item_id] = item.amount; // Map item IDs to their respective quantities
+                return acc;
+            }, {})
+        ]
+    };
+    
 
       console.log('List data:', listData);
   
       // Send the PUT request to update the list
       await axios.put(`${API_URLS.UPDATE_LIST_BY_ID}/${listId}`, listData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        // headers: {
+        //     // Authorization: `Bearer ${token}`,
+        //     'Content-Type': 'application/json',
+        // },
+    });
   
       // Show success message, close edit mode
       console.log('List updated successfully');

@@ -327,6 +327,11 @@ const Pantry: React.FC = ({
             }
           }}
         />
+
+          {/* { barcodeScanning &&       
+            <BarcodeScannerScreen onClose={() => {setBarcodeScanning(false);onRefresh()}} />
+          } */}
+
       </SafeAreaView>
     </Layout>
   );

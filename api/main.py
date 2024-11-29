@@ -911,7 +911,9 @@ def get_list_by_id(list_id: str, current_user: User = Depends(get_current_user))
     return list_dict
 
 @app.put("/lists/{list_id}", tags=["Lists"])
-def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depends(get_current_user)):
+# def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depends(get_current_user)):
+def update_list(list_id: str, list_data: ListUpdate):
+  
     """
     Update an existing list, including updating, adding, or removing items.
     """
@@ -942,37 +944,38 @@ def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depend
         # Step 3: Process the items in list_data.items
         if list_data.items is not None:
             incoming_item_ids = set()
-            for item in list_data.items:
-                item_id = item.get('item_id')
-                quantity = item.get('quantity', 1)  # Assuming each item is a dict with 'item_id' and 'quantity'
-                incoming_item_ids.add(item_id)
 
-                # Check if the item already exists in the list
-                cursor.execute(
-                    "SELECT * FROM list_item_lines WHERE list_id = ? AND item_id = ?",
-                    (list_id, item_id)
-                )
-                existing_item = cursor.fetchone()
+            for item_dict in list_data.items:  # Each `item_dict` is a dictionary like {'2': 1, '3': 1}
+                for item_id, quantity in item_dict.items():  # Iterate over key-value pairs
+                    print(f"Processing item_id: {item_id}, quantity: {quantity}")
+                    incoming_item_ids.add(item_id)
 
-                if existing_item:
-                    # If the item exists, update its quantity
+                    # Check if the item already exists in the list
                     cursor.execute(
-                        """
-                        UPDATE list_item_lines
-                        SET list_item_quantity = ?
-                        WHERE list_id = ? AND item_id = ?
-                        """,
-                        (quantity, list_id, item_id)
+                        "SELECT * FROM list_item_lines WHERE list_id = ? AND item_id = ?",
+                        (list_id, item_id)
                     )
-                else:
-                    # If the item doesn't exist, insert it
-                    cursor.execute(
-                        """
-                        INSERT INTO list_item_lines (list_item_line_id, list_id, item_id, list_item_quantity)
-                        VALUES (?, ?, ?, ?)
-                        """,
-                        (str(uuid.uuid4()), list_id, item_id, quantity)
-                    )
+                    existing_item = cursor.fetchone()
+
+                    if existing_item:
+                        # If the item exists, update its quantity
+                        cursor.execute(
+                            """
+                            UPDATE list_item_lines
+                            SET list_item_quantity = ?
+                            WHERE list_id = ? AND item_id = ?
+                            """,
+                            (quantity, list_id, item_id)
+                        )
+                    else:
+                        # If the item doesn't exist, insert it
+                        cursor.execute(
+                            """
+                            INSERT INTO list_item_lines (list_item_line_id, list_id, item_id, list_item_quantity)
+                            VALUES (?, ?, ?, ?)
+                            """,
+                            (str(uuid.uuid4()), list_id, item_id, quantity)
+                        )
 
             # Step 4: Identify and delete items removed from the list
             items_to_remove = current_item_ids - incoming_item_ids
@@ -981,6 +984,7 @@ def update_list(list_id: str, list_data: ListUpdate, current_user: User = Depend
                     "DELETE FROM list_item_lines WHERE list_id = ? AND item_id = ?",
                     [(list_id, item_id) for item_id in items_to_remove]
                 )
+        
 
         # Commit the transaction
         conn.commit()

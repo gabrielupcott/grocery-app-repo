@@ -134,7 +134,7 @@ const BarcodeScannerScreen: React.FC<BarcodeScannerScreenProps> = ({ onClose }) 
             {productInfo && (
                 <AddItemModal
                     visible={isAddModalVisible}
-                    onClose={() => setIsAddModalVisible(false)}
+                    onClose={onClose}
                     onAdd={() => {
                         setIsAddModalVisible(false);
                         setScanned(false);

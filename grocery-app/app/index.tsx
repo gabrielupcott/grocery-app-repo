@@ -1,9 +1,40 @@
 import { SafeAreaView, View, StyleSheet, Image } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Text } from "@ui-kitten/components";
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
-const Landing: React.FC<{ navigation: any }> = ({ navigation }) => {
+const Landing: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("token");
+        if (token) {
+          // Redirect to the main app if the token exists
+          router.replace('/(tabs)');
+        } else {
+          // If no token, stop the loading indicator
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error checking token:", error);
+        setLoading(false);
+      }
+    };
+
+    checkToken();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
