@@ -59,6 +59,7 @@ class UserRegister(BaseModel):
     password: str
     email: str
     role: int
+    location: str
 
 class UserLogin(BaseModel):
     username: str
@@ -367,10 +368,10 @@ def register(user: UserRegister):
         # Insert the new user into the users table with hashed password
         cursor.execute(
             """
-            INSERT INTO users (user_id, user_email, user_password, user_type)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO users (user_id, user_email, user_password, user_type, user_location)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (user_id, user.email, hashed_password, user.role)
+            (user_id, user.email, hashed_password, user.role, user.location)
         )
         
         conn.commit()
@@ -579,7 +580,6 @@ async def get_user_location_coordinates(address: str, current_user: User = Depen
     Retrieve the latitude and longitude coordinates for a given address.
     Requires authentication.
     """
-    print(f"Address received: {address}")
     
     coordinates = get_coordinates(address)
     
@@ -947,7 +947,6 @@ def update_list(list_id: str, list_data: ListUpdate):
 
             for item_dict in list_data.items:  # Each `item_dict` is a dictionary like {'2': 1, '3': 1}
                 for item_id, quantity in item_dict.items():  # Iterate over key-value pairs
-                    print(f"Processing item_id: {item_id}, quantity: {quantity}")
                     incoming_item_ids.add(item_id)
 
                     # Check if the item already exists in the list
@@ -1253,7 +1252,7 @@ def get_nearby_stores(current_location: str, current_user: User = Depends(get_cu
     return nearby_stores
 
 @app.post("/verify-location", tags=["Utilities"])
-def verify_location(address: str, current_user: User = Depends(get_current_user)):
+def verify_location(address: str):
     """
     Verify if a location can be found based on its address.
     """

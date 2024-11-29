@@ -40,9 +40,7 @@ const Register: React.FC = () => {
   const verifyLocation = async (location: string) => {
     try {
       const response = await axios.post(
-        API_URLS.VERIFY_LOCATION + "?address=" + location,
-        {},
-        { headers: { "Authorization": `Bearer ${SecureStore.getItemAsync("token")}` } }
+        API_URLS.VERIFY_LOCATION + "?address=" + location
       );
       if (response.status === 200 && response.data.found) {
         setIsLocationValid(true);
@@ -61,6 +59,8 @@ const Register: React.FC = () => {
   };
 
   const onSubmit = async (values: FormValues, { setSubmitting }: FormikHelpers<FormValues>) => {
+    setIsLocationValid(await verifyLocation(values.location)); // Reset location validation status
+
     if (!isLocationValid){
       if (!await verifyLocation(values.location)){
         setGeneralError("Registration failed. This location isn't valid.");
@@ -174,13 +174,13 @@ const Register: React.FC = () => {
               caption={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : ""}
               secureTextEntry
             />
-            <Toggle
+            {/* <Toggle
               style={styles.toggle}
               checked={values.role === 2}
               onChange={(checked) => setFieldValue("role", checked ? 2 : 1)}
             >
               {`Role: ${values.role === 2 ? "Admin" : "User"}`}
-            </Toggle>
+            </Toggle> */}
             {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
             <Button
               style={styles.submitButton}
