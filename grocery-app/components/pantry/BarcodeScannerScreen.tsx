@@ -106,6 +106,7 @@ const BarcodeScannerScreen: React.FC<BarcodeScannerScreenProps> = ({ onClose }) 
         } catch (error) {
             console.error('Error fetching product information:', error);
             Alert.alert('Error', 'Could not fetch product information.');
+            onClose();
         } finally {
             setLoading(false);
         }
