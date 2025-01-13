@@ -3,48 +3,33 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } fr
 import { Button } from '@ui-kitten/components';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
-import { useNavigation } from '@react-navigation/native';
 import { API_URLS } from '../../constants/constants';
 import AddItemModal from './AddItemModal';
+import { useAuth } from '@/context/AuthContext';
 
 type BarcodeScannerScreenProps = {
     onClose: () => void;
 };
 
 const BarcodeScannerScreen: React.FC<BarcodeScannerScreenProps> = ({ onClose }) => {
+    const { token, userId } = useAuth();
     const [facing, setFacing] = useState<CameraType>('back');
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [loading, setLoading] = useState(false);
     const [productInfo, setProductInfo] = useState<any | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [title, setTitle] = useState<string>('');
-    const [nutrition, setNutrition] = useState<any | null>(null);
     const [delayScanning, setDelayScanning] = useState(false); // New state for delay control
 
-    const navigation = useNavigation();
-
-    const loadUserData = async () => {
-        const storedToken = await SecureStore.getItemAsync("token");
-        const storedUserId = await SecureStore.getItemAsync("user_id");
-        setToken(storedToken);
-        setUserId(storedUserId);
-    };
-
     useEffect(() => {
-        loadUserData();
-
-        // Set a delay before enabling barcode scanning
-        const timer = setTimeout(() => setDelayScanning(true), 3000); // 3-second delay
-
+        const timer = setTimeout(() => setDelayScanning(true), 3000);
         return () => {
-            clearTimeout(timer); // Clear the timer if the component unmounts
-            setScanned(false);
+          clearTimeout(timer);
+          setScanned(false);
         };
-    }, []);
+      }, []);
+    
 
     if (!permission) {
         return <View />;

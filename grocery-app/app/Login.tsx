@@ -8,6 +8,7 @@ import { API_URLS } from "../constants/constants"; // Assuming you have a consta
 import * as SecureStore from 'expo-secure-store';
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from "react-native-root-toast"; // Import Toast
+import { useAuth } from '../context/AuthContext';
 
 interface FormValues {
   username: string;
@@ -37,6 +38,7 @@ const LoginSchema = Yup.object().shape({
 const Login: React.FC = () => {
   const [generalError, setGeneralError] = useState<string>("");
   const { registrationSuccess } = useLocalSearchParams();
+  const { login } = useAuth();
 
   useEffect(() => {
     if (registrationSuccess === "true") {
@@ -74,46 +76,9 @@ const Login: React.FC = () => {
     { setSubmitting, setFieldError }: FormikHelpers<FormValues>
   ) => {
     try {
-      const test_response = await axios.get(`${API_URLS.API_TEST}`);
-      console.log("API Test response:", test_response);
-
-      const response = await axios.post(
-        `${API_URLS.LOGIN}`,
-        {
-          username: values.username,
-          password: values.password,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          timeout: 5000, // Adding timeout here too
-        }
-      );
-
-      console.log("Login response:", response);
-
-      const token = response.data.access_token;
-
-      // Store the token in SecureStore
-      await SecureStore.setItemAsync("token", token);
-      await SecureStore.setItemAsync("userName", values.username);
-      
-      // await SecureStore.setItemAsync("userType", response.data.user_type);
-
-      const response2 = await axios.get(`${API_URLS.GET_USERID_BY_EMAIL}?email=${values.username}`);
-
-      const user_id = response2.data.user_id;
-      console.log("User ID:", user_id);
-
-      await SecureStore.setItemAsync("user_id", user_id);
-
-      if (response.status === 200) {
-        router.replace('/(tabs)');
-      }
+      await login(values.username, values.password);
     } catch (error) {
       const axiosError = error as CustomAxiosError;
-
       if (axiosError.code === 'ECONNABORTED') {
         setGeneralError("Request timed out. Please try again.");
       } else if (axiosError.response?.data?.messages) {
@@ -122,7 +87,6 @@ const Login: React.FC = () => {
       } else {
         console.error("Login error:", axiosError);
         setGeneralError("Error: " + axiosError.message);
-        // setGeneralError("An unexpected error occurred. Check your login information.");
       }
     } finally {
       setSubmitting(false);

@@ -3,29 +3,19 @@ import React, { useEffect, useState } from "react";
 import { Button, Text } from "@ui-kitten/components";
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '@/context/AuthContext';
 
 const Landing: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkToken = async () => {
-      try {
-        const token = await SecureStore.getItemAsync("token");
-        if (token) {
-          // Redirect to the main app if the token exists
-          router.replace('/(tabs)');
-        } else {
-          // If no token, stop the loading indicator
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error checking token:", error);
-        setLoading(false);
-      }
-    };
-
-    checkToken();
-  }, []);
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
   if (loading) {
     return (

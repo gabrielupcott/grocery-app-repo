@@ -12,6 +12,7 @@ import ListDetailsModal from '../../components/lists/ListDetailsModal';
 import List from "@/components/lists/List"; // The List component we defined earlier
 import DeleteConfirmationModal from '@/components/pantry/DeleteConfirmationModal'; // For delete confirmation
 import AddListModal from "@/components/lists/AddListModal";
+import { useAuth } from '@/context/AuthContext';
 
 type ListType = {
   list_id: string;
@@ -33,10 +34,7 @@ const actions = [
 ];
 
 const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
-  const layout = useWindowDimensions();
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const { token, userId } = useAuth();
   const [lists, setLists] = useState<ListType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -50,25 +48,28 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route })
   const [addListModalVisible, setAddListModalVisible] = useState(false);
 
   useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
-    const storedUserName = await SecureStore.getItemAsync("userName");
-    const storedToken = await SecureStore.getItemAsync("token");
-    const storedUserId = await SecureStore.getItemAsync("user_id");
-
-    setUserName(storedUserName);
-    setToken(storedToken);
-    setUserId(storedUserId);
-
-    console.log("Stored user data:", storedUserId);
-
-    if (storedToken && storedUserId) {
-      fetchLists(storedUserId, storedToken);
+    if (token && userId) {
+      fetchLists(userId, token);
     }
     setLoading(false);
-  };
+  }, [token, userId]);
+
+  // const loadUserData = async () => {
+  //   const storedUserName = await SecureStore.getItemAsync("userName");
+  //   const storedToken = await SecureStore.getItemAsync("token");
+  //   const storedUserId = await SecureStore.getItemAsync("user_id");
+
+  //   setUserName(storedUserName);
+  //   setToken(storedToken);
+  //   setUserId(storedUserId);
+
+  //   console.log("Stored user data:", storedUserId);
+
+  //   if (storedToken && storedUserId) {
+  //     fetchLists(storedUserId, storedToken);
+  //   }
+  //   setLoading(false);
+  // };
 
   const getListItemCount = async (listId: string, token: string) => {
     try {
@@ -118,9 +119,9 @@ const Lists: React.FC<{ navigation: any; route: any }> = ({ navigation, route })
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    if (userId && token) {
-      loadUserData();
-    }
+    // if (userId && token) {
+    //   loadUserData();
+    // }
     setRefreshing(false);
   };
 

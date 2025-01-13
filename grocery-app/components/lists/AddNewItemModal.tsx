@@ -9,20 +9,19 @@ import * as SecureStore from 'expo-secure-store';
 import ItemDetailsListModal from './ItemDetailsListModal'; // Import ItemDetailsListModal
 import { API_URLS } from '../../constants/constants';
 import { ListItem } from './ListDetailsModal'; // Import ListItem type
+import { useAuth } from '@/context/AuthContext';
 
 type AddNewItemModalProps = {
     visible: boolean;
     onClose: () => void;
-    userId: string | null;
-    list: ListItem[];  // The list object
-    newList: ListItem[]; // The new list object
+    list: ListItem[];
+    newList: ListItem[];
     onSave: (newItems: ListItem[]) => void;
 };
 
 const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, list, newList, onSave }) => {
-    const [userName, setUserName] = useState<string | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const { userId, token } = useAuth();
+    // const [token, setToken] = useState<string | null>(null);
     const [items, setItems] = useState<ListItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [searchQuery, setSearchQuery] = useState<string>("");
@@ -40,19 +39,12 @@ const AddNewItemModal: React.FC<AddNewItemModalProps> = ({ visible, onClose, lis
     }, [visible]);
 
     const loadUserData = async () => {
-        const storedUserName = await SecureStore.getItemAsync("userName");
-        const storedToken = await SecureStore.getItemAsync("token");
-        const storedUserId = await SecureStore.getItemAsync("user_id");
 
-        setUserName(storedUserName);
-        setToken(storedToken);
-        setUserId(storedUserId);
-
-        if (storedToken && storedUserId) {
+        if (token && userId) {
             try {
-                const response = await axios.get(`${API_URLS.GET_ITEMS_BY_USER}/${storedUserId}`, {
+                const response = await axios.get(`${API_URLS.GET_ITEMS_BY_USER}/${userId}`, {
                     headers: {
-                        Authorization: `Bearer ${storedToken}`,
+                        Authorization: `Bearer ${token}`,
                     },
                 });
                 // Need to add amount property to each item

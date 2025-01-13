@@ -37,7 +37,7 @@ app.add_middleware(
 DATABASE_FILE = "test.db"
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 COGNITO_POOL_ID = os.getenv("COGNITO_POOL_ID")
 COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
 COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
@@ -45,6 +45,7 @@ COGNITO_REGION = os.getenv("COGNITO_REGION")
 OPEN_FOOD_FACTS_API_URL = os.getenv("OPEN_FOOD_FACTS_API_URL")
 GEOCODING_API_KEY = os.getenv("GEOCODING_API_KEY")
 GEOCODING_API_URL = "https://api.opencagedata.com/geocode/v1/json"
+print(COGNITO_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, COGNITO_REGION, OPEN_FOOD_FACTS_API_URL, GEOCODING_API_KEY)
 
 # Dependencies and clients
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

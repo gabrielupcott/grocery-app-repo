@@ -7,21 +7,18 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { ApplicationProvider, Layout, Text } from "@ui-kitten/components";
 import * as eva from "@eva-design/eva";
-import { default as theme } from "../theme/custom-theme.json"; // <-- Import app theme
-
+import { default as theme } from "../theme/custom-theme.json";
+import { AuthProvider } from '../context/AuthContext';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: 'index',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -30,7 +27,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -48,34 +44,21 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-// let customFonts = {
-//   "OpenSans-Regular": require("./assets/fonts/OpenSans-Regular.ttf"),
-//   "Poppins-Medium": require("../assets/fonts/Poppins-Medium.ttf"),
-// };
-
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  // const [isLoaded] = useFonts(customFonts);
-
-  // if (!isLoaded) {
-  //   return (
-  //     <ApplicationProvider {...eva} theme={{ ...eva.light, ...theme }}>
-  //       <CustomText>Loading...</CustomText>
-  //     </ApplicationProvider>
-  //   );
-  // }
 
   return (
     <ApplicationProvider {...eva} theme={{ ...eva.light, ...theme }}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="Login" options={{
-          headerShown: false, gestureEnabled: false, // Disable swipe back gesture
-        }} />
-        <Stack.Screen name="Register" options={{ headerShown: false }} />
-        {/* <Stack.Screen name="Verify" options={{ headerShown: false }} /> */}
-        {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
-      </Stack>
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="Login" options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }} />
+          <Stack.Screen name="Register" options={{ headerShown: false }} />
+        </Stack>
+      </AuthProvider>
     </ApplicationProvider>
   );
 }

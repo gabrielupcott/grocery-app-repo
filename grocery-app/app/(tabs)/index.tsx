@@ -15,6 +15,7 @@ import AddItemModal from '@/components/pantry/AddItemModal';  // Import the new 
 import DeleteConfirmationModal from '@/components/pantry/DeleteConfirmationModal'; // Import the Delete Modal
 import { router } from 'expo-router';
 import BarcodeScannerScreen from "../../components/pantry/BarcodeScannerScreen";
+import { useAuth } from '@/context/AuthContext';
 
 const actions = [
   {
@@ -35,13 +36,9 @@ const actions = [
   }
 ];
 
-const Pantry: React.FC = ({
-
-}) => {
+const Pantry: React.FC = () => {
   const layout = useWindowDimensions();
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const { token, userId, userName, logout } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeItemId, setActiveItemId] = useState<string | null>(null); // Track active menu
@@ -55,9 +52,7 @@ const Pantry: React.FC = ({
   const [refreshing, setRefreshing] = useState(false); // State for refreshing
   const [barcodeScanning, setBarcodeScanning] = useState<boolean>(false);
 
-  // Function to handle back press
   const handleBackPress = () => {
-    // Show an alert to confirm the action
     Alert.alert(
       'Log out?',
       'Are you sure you want to log out?',
@@ -69,45 +64,23 @@ const Pantry: React.FC = ({
         },
         {
           text: 'Log out',
-          onPress: () => handleLogout(), // Log the user out on confirmation
+          onPress: () => logout(),
         },
       ],
       { cancelable: false }
     );
-    return true; // Prevent default back button behavior
-  };
-
-  // Function to handle user logout
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('token');
-    await SecureStore.deleteItemAsync('user_id');
-    await SecureStore.deleteItemAsync('userName');
-
-    // Navigate to Login screen
-    router.replace('/Login'); // Replace ensures the user can't go back
+    return true;
   };
 
   const loadUserData = async () => {
-    const storedUserName = await SecureStore.getItemAsync("userName");
-    const storedToken = await SecureStore.getItemAsync("token");
-    const storedUserId = await SecureStore.getItemAsync("user_id");
-
-    setUserName(storedUserName);
-    setToken(storedToken);
-    setUserId(storedUserId);
-
-    console.log("Stored user data:", storedUserId);
-
-
-    if (storedToken && storedUserId) {
+    if (token && userId) {
       try {
-        const response = await axios.get(`${API_URLS.GET_ITEMS_BY_USER}/${storedUserId}`, {
+        const response = await axios.get(`${API_URLS.GET_ITEMS_BY_USER}/${userId}`, {
           headers: {
-            Authorization: `Bearer ${storedToken}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         setItems(response.data.items);
-        // console.log("Items:", response.data.items);
       } catch (error) {
         console.error("Error fetching items:", error);
       }
@@ -123,14 +96,12 @@ const Pantry: React.FC = ({
     return () => backHandler.remove();
   }, []);
 
-  // Function to handle refresh
   const onRefresh = async () => {
     setRefreshing(true);
     await loadUserData(); // Re-fetch the data
     setRefreshing(false); // Set refreshing to false after data is fetched
   };
 
-  // Handle API delete request
   const handleDeleteConfirm = async () => {
     if (selectedItem && token) {
       try {
@@ -159,17 +130,13 @@ const Pantry: React.FC = ({
     setSelectedItem(null);
   };
 
-
-  // Handle the "Add Manually" action
   const handleAddManually = () => {
     setAddItemModalVisible(true);
   };
 
-  // When the item is added, refresh the list
   const handleItemAdded = () => {
     onRefresh();
   };
-
 
   const filterItems = () => {
     return items
@@ -215,8 +182,6 @@ const Pantry: React.FC = ({
     onRefresh(); // Refresh the data
   };
 
-  // console.log("Actual Items:", items);
-
   if (barcodeScanning)
     return (
       <BarcodeScannerScreen onClose={() => {setBarcodeScanning(false);onRefresh()}} />
@@ -230,7 +195,7 @@ const Pantry: React.FC = ({
             style={styles.logoutButton}
             appearance="ghost"
             status="danger"
-            onPress={handleLogout}
+            onPress={logout}
           >
             Log out
           </Button>
@@ -240,7 +205,6 @@ const Pantry: React.FC = ({
           </Text>
         </View>
 
-        {/* Search bar */}
         <Input
           placeholder="Search items..."
           value={searchQuery}
@@ -249,7 +213,6 @@ const Pantry: React.FC = ({
           style={styles.searchBar}
         />
 
-        {/* In Stock and All Out buttons */}
         <SegmentedControl
           values={['In Stock', 'All Out']}
           selectedIndex={stockFilter === 'InStock' ? 0 : 1}
@@ -258,11 +221,6 @@ const Pantry: React.FC = ({
           }}
         />
 
-        {/* FlatList for items */}
-        {/* Display empty loading item if no items yet */}
-
-
-        {/* Item Details Modal */}
         <FlatList
           data={filterItems()}
           keyExtractor={(item) => item.item_id.toString()}
@@ -285,7 +243,6 @@ const Pantry: React.FC = ({
           }
         />
 
-        {/* Delete Confirmation Modal */}
         <DeleteConfirmationModal
           visible={deleteModalVisible}
           onClose={closeDeleteModal}
@@ -293,16 +250,13 @@ const Pantry: React.FC = ({
           itemName={selectedItem?.item_name || ""}
         />
 
-        {/* Item Details Modal */}
         <ItemDetailsModal
           visible={modalVisible}
           item={selectedItem}
           onClose={closeModal}
           onEdit={handleEdit}
-          token={token}
         />
 
-        {/* Add Item Modal */}
         <AddItemModal
           visible={addItemModalVisible}
           onClose={() => setAddItemModalVisible(false)}
@@ -327,10 +281,6 @@ const Pantry: React.FC = ({
             }
           }}
         />
-
-          {/* { barcodeScanning &&       
-            <BarcodeScannerScreen onClose={() => {setBarcodeScanning(false);onRefresh()}} />
-          } */}
 
       </SafeAreaView>
     </Layout>
@@ -380,4 +330,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Pantry;
+export default Pantry; 

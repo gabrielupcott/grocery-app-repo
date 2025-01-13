@@ -6,16 +6,23 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { API_URLS } from '@/constants/constants';
 import { Item } from '@/components/pantry/PantryItem';
+import { useAuth } from '@/context/AuthContext';
 
 type ItemDetailsModalProps = {
     visible: boolean;
     item: Item | null;
     onClose: () => void;
     onEdit: (item: Item) => void;
-    token: string | null;
 };
 
-const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({ visible, item, onClose, onEdit, token }) => {
+
+const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({    
+    visible,
+    item,
+    onClose,
+    onEdit 
+}) => {
+    const { token } = useAuth();
     const [quantity, setQuantity] = useState<number>(item?.item_stock || 0);
     const [editMode, setEditMode] = useState<boolean>(false);
     const [imageUri, setImageUri] = useState<string | null>(null);

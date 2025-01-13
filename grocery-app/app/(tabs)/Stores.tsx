@@ -8,6 +8,7 @@ import { Text } from "@ui-kitten/components";
 import { API_URLS } from "@/constants/constants";
 import StoreListItem from '@/components/stores/StoreListItem';
 import OwnerStores from "@/components/stores/OwnerStores";
+import { useAuth } from '@/context/AuthContext';
 
 interface Store {
   store_id: string;
@@ -19,9 +20,7 @@ interface Store {
 }
 
 const Stores: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userType, setUserType] = useState<number | null>(null); // Track the user type
-  const [token, setToken] = useState<string | null>(null);
+  const { token, userName, userType } = useAuth();
   const [userCoordinates, setUserCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [nearbyStores, setNearbyStores] = useState<Store[]>([]);
   const [customLocation, setCustomLocation] = useState<string>('');
@@ -29,38 +28,25 @@ const Stores: React.FC<{ navigation: any; route: any }> = ({ navigation, route }
   const [errorText, setErrorText] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    if (token && userName) {
+      loadStoreData();
+    }
+  }, [token, userName]);
 
-  const loadUserData = async () => {
+  const loadStoreData = async () => {
     try {
-      const storedUserName = await SecureStore.getItemAsync("userName");
-      const storedToken = await SecureStore.getItemAsync("token");
-
-      setUserName(storedUserName);
-      setToken(storedToken);
-
-      // Fetch user type
-      const responseUserType = await axios.get(`${API_URLS.GET_USER_TYPE}/${storedUserName}`, {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      });
-      setUserType(responseUserType.data.user_type);
-
-      // Conditionally fetch stores
-      if (responseUserType.data.user_type === 2) {
-        // User type 2 - Owner
+      if (userType === 2) {
         return; // Rendering handled by OwnerStores
       } else {
-        // Default user - load nearby stores
-        const responseLocation = await axios.get(`${API_URLS.GET_USER_LOCATION}/${storedUserName}`, {
-          headers: { Authorization: `Bearer ${storedToken}` },
+        const responseLocation = await axios.get(`${API_URLS.GET_USER_LOCATION}/${userName}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const userAddress = responseLocation.data.user_location;
-        fetchNearbyStores(userAddress, storedToken);
+        fetchNearbyStores(userAddress, token);
       }
     } catch (error) {
-      console.error("Failed to load user data or coordinates:", error);
+      console.error("Failed to load store data:", error);
       setLoading(false);
     }
   };

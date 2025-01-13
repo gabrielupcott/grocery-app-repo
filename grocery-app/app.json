@@ -32,8 +32,8 @@
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyCuovgWLEXeesGH5a2FL7G0VPgXfsT_DWA"
-          }
         }
+      }
     },
     "web": {
       "bundler": "metro",
@@ -44,14 +44,17 @@
       "expo-router",
       "expo-secure-store",
       "expo-localization",
-      ["expo-build-properties", 
-      {
-        "android": {
-          "networkSecurityConfig": {
-            "clearTextTrafficPermitted": true
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "networkSecurityConfig": {
+              "clearTextTrafficPermitted": true
+            }
           }
         }
-      }]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

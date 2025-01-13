@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Modal, FlatList, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
-import { Text, Input, OverflowMenu, MenuItem, Button } from '@ui-kitten/components';
+import { Text, Input, Button } from '@ui-kitten/components';
 import axios from 'axios';
 import { API_URLS } from '../../constants/constants';
-import { useWindowDimensions } from "react-native";
-import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons'; // For the filter icon
-import { FloatingAction } from "react-native-floating-action";
-import DeleteConfirmationModal from '@/components/pantry/DeleteConfirmationModal'; // Import the Delete Modal
-import ItemDetailsModal from "@/components/pantry/ItemDetailsModal";
 import PantryItemAddList from '@/components/lists/PantryItemAddList'; // Import your new component and Item type
 import ItemDetailsListModal from './ItemDetailsListModal';
 import SaveListModal from "@/components/lists/SaveListModal";
@@ -24,18 +19,14 @@ type ListDetailsModalProps = {
 
 const AddListModal: React.FC<ListDetailsModalProps> = ({ visible, onClose, token, userId }) => {
     if (!visible) return null;
-    const [userName, setUserName] = useState<string | null>(null);
     const [items, setItems] = useState<ListItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [activeItemId, setActiveItemId] = useState<string | null>(null); // Track active menu
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [refreshing, setRefreshing] = useState(false); // State for refreshing
-    const [deleteModalVisible, setDeleteModalVisible] = useState(false); // For delete confirmation modal
     const [modalVisible, setModalVisible] = useState<boolean>(false); // View/Edit Modal visibility
     const [stockFilter, setStockFilter] = useState<'InStock' | 'AllOut'>('InStock'); // Track the stock filter
-    // state for new list which is dict of item_id and number representing the qty of that item in the new list
-    // const [newListItems, setNewListItems] = useState<{ item_id: string, amount: number }[]>([]);
     const [newListItems, setNewListItems] = useState<ListItem[]>([]);
     const [isListValid, setIsListValid] = useState<boolean>(false); // Track if the list is valid
     const [saveModalVisible, setSaveModalVisible] = useState<boolean>(false); // Save confirmation modal
